@@ -1,0 +1,33 @@
+---
+title: "Lab 1 report"
+author: "Marijn Jaarsma & Simon Jorstedt & Hugo Morvan"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Assignment 1
+
+```{r}
+# Read data
+digit_data <- read.csv("optdigits.csv")
+
+# Partition data (according to Oleg)
+n = dim(digit_data)[1]
+
+set.seed(12345)
+id = sample(1:n, floor(n*0.5))
+digits_train = digit_data[id,]
+id1 = setdiff(1:n, id)
+
+set.seed(12345)
+id2 = sample(id1, floor(n*0.25))
+digits_valid = digit_data[id2,]
+id3 = setdiff(id1,id2)
+digits_test = digit_data[id3,]
+```
+
