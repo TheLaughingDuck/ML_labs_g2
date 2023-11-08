@@ -1,0 +1,80 @@
+---
+title: "Sim_notebook"
+author: "Simon Jorstedt"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+# Question 3
+
+```{r}
+library(plotly)
+library(magrittr)
+
+# Read data
+diab_data <- read.csv("pima-indians-diabetes.csv")
+colnames(diab_data) <- c("n_pregnant", "pg_con", "blood_pressure", "skindfold_thickness", "serum_insulin", "bmi", "diab_pedigree", "age", "diabetes")
+
+# Divide data train test?
+n_diab = dim(diab_data)[1]
+
+set.seed(7183723)
+id_diab_train = sample(1:n_diab, floor(n_diab*0.6))
+id_diab_test = setdiff(1:n_diab, id_diab_train)
+
+diab_data_train = diab_data[id_diab_train,]
+diab_data_test = diab_data[id_diab_test,]
+```
+
+
+## 3.1
+
+```{r}
+plot_ly(type="scatter", mode="markers",
+        data = diab_data,
+        x = ~age,
+        y = ~pg_con,
+        split = ~diabetes) %>%
+  layout(title = "Fig 3.1 PGC vs Age, colored by diabetes")
+```
+
+We do not think it will be easy to make the distinction using only these two . There is a large cluster of young people (ages ~20-25) that do not have diabetes, along with a significant number of outliers (among the non-diabetes people.) The people with diabetes however are much more spread out, with no smaller clusters. It appears as though people with diabetes tend to have slightly larger Plasma Glucose Concentration (PGC) values than people without diabetes. Thus it does appear as though there is some precedent for using only PGC values and Age as explanatory variables. It won't be easy or "clear-cut" though.
+
+
+
+# 3.2
+
+
+```{r}
+model1 <- glm(formula = diabetes ~pg_con + age,
+    family = binomial(link = "logit"),
+    data = diab_data)
+
+summary(model1)
+
+# Calculate
+diab_data <- diab_data %>%
+  mutate(predicted = as.integer(fitted(model1) >= 0.5))
+
+# Misclassification error
+mis_class_error <- 1- (diab_data$diabetes == diab_data$predicted) %>% sum() / nrow(diab_data)
+
+cat("Misclassification error:", mis_class_error, "\n")
+```
+
+
+This is the mathematical model: $y = \cdots$
+
+
+```{r}
+# New plot
+
+plot_ly(type="scatter", mode="markers",
+        data = diab_data,
+        x = ~age,
+        y = ~pg_con,
+        split = ~predicted)
+```
+
+The quality of this classification is ok, not perfect. The resulting predictions is visually precisely what could be expected when analysing Figure 3.1. The model essentially just takes what was stated before, about diabetic people being overrepresented among people with high PGC values.
+
