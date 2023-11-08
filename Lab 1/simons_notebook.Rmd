@@ -54,10 +54,12 @@ summary(model1)
 
 # Calculate
 diab_data <- diab_data %>%
-  mutate(predicted = as.integer(fitted(model1) >= 0.5))
+  mutate(predicted_05 = as.integer(fitted(model1) >= 0.5)) %>%
+  mutate(predicted_02 = as.integer(fitted(model1) >= 0.2)) %>%
+  mutate(predicted_08 = as.integer(fitted(model1) >= 0.8))
 
 # Misclassification error
-mis_class_error <- 1- (diab_data$diabetes == diab_data$predicted) %>% sum() / nrow(diab_data)
+mis_class_error <- 1- (diab_data$diabetes == diab_data$predicted_05) %>% sum() / nrow(diab_data)
 
 cat("Misclassification error:", mis_class_error, "\n")
 ```
@@ -74,7 +76,56 @@ plot_ly(type="scatter", mode="markers",
         x = ~age,
         y = ~pg_con,
         split = ~predicted)
+
+# Add curve
 ```
 
-The quality of this classification is ok, not perfect. The resulting predictions is visually precisely what could be expected when analysing Figure 3.1. The model essentially just takes what was stated before, about diabetic people being overrepresented among people with high PGC values.
+The quality of this classification is ok, not perfect. The resulting predictions is visually precisely what could be expected when analysing Figure 3.1. The model essentially just takes what was stated before, about diabetic people being overrepresented among people with high PGC values. This means that there will be a high true/false pos/neg probability.
+
+# 3.3
+Add curve
+
+# 3.4
+
+```{r}
+# Plotly named colours
+# https://community.plotly.com/t/plotly-colours-list/11730/3
+
+
+# r = 0.2
+p_r02 <- plot_ly(type="scatter", mode="markers",
+        data = diab_data,
+        x = ~age,
+        y = ~pg_con,
+        colors = c("#1f77b4", "#ff7f0e"),
+        color = ~as.factor(c("Diabetes", "No diabetes")[diab_data$predicted_02+1]),
+        legendgrouptitle = list(text = "Diagnosis"))
+        #split = ~predicted_02)
+# add curve
+
+
+# r = 0.8
+p_r08 <- plot_ly(type="scatter", mode="markers",
+        data = diab_data,
+        x = ~age,
+        y = ~pg_con,
+        colors = c("#1f77b4", "#ff7f0e"),
+        color = ~as.factor(c("Diabetes", "No diabetes")[diab_data$predicted_08+1]),
+        showlegend = FALSE) # We use the legend from the previous plot
+# add curve
+
+
+subplot(p_r02, p_r08) %>%
+  layout(title = "Fig 3.4")
+```
+
+Comment on Figure 3.4.
+
+
+## 3.5
+
+```{r}
+# Create new variables z_1, ... z_5
+
+```
 
