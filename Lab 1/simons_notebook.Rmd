@@ -126,6 +126,18 @@ Comment on Figure 3.4.
 
 ```{r}
 # Create new variables z_1, ... z_5
+diab_data <- diab_data %>%
+  mutate(z1 = pg_con^4 * age^0, 
+         z2 = pg_con^3 * age^1,
+         z3 = pg_con^2 * age^2,
+         z4 = pg_con^1 * age^3,
+         z5 = pg_con^0 * age^4)
 
+# New model
+model2 <- glm(formula = diabetes ~ pg_con + age + z1 + z2 + z3 + z4 + z5,
+    family = binomial(link = "logit"),
+    data = diab_data)
+
+summary(model2)
 ```
 
