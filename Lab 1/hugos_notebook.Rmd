@@ -9,22 +9,133 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+# Assignment 1 : Handwritten digit recognition with K-nearest neighbors.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## 1. 
+Import the data into R and divide it into training, validation and test sets (50%/25%/25%) by using the partitioning principle specified in the lecture slides. 
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r 1.1}
+# Read data
+digit_data <- read.csv("optdigits.csv", header=FALSE)
 
-```{r cars}
-summary(cars)
+# Partition data (according to Oleg)
+n = dim(digit_data)[1]
+
+set.seed(12345)
+id = sample(1:n, floor(n*0.5))
+digits_train = digit_data[id,]
+id1 = setdiff(1:n, id)
+
+set.seed(12345)
+id2 = sample(id1, floor(n*0.25))
+digits_valid = digit_data[id2,]
+id3 = setdiff(id1,id2)
+digits_test = digit_data[id3,]
+
+#Is feature scalling needed ??
+#Slide 15 in lecture 1d
 ```
 
-## Including Plots
+## 2. 
+Use training data to fit 30-nearest neighbor classifier with function kknn() and kernel=”rectangular” from package kknn and estimate:
+• Confusion matrices for the training and test data (use table())
+• Misclassification errors for the training and test data
 
-You can also embed plots, for example:
+```{r 1.2}
+library(kknn)
+library(caret)
+library(shipunov)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+#Fitting the classifier
+digits_kknn <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_test, k = 30, kernel = "rectangular")
+
+
+#Confusion Matrix: 
+fit <- fitted(digits_kknn)
+predictions <- predict(digits_kknn, type='prob')
+predictions
+print("Confusion matrix:")
+conf_mat <- table(digits_test$V65, fit)
+conf_mat
+shipunov::Misclass(fit, digits_test$V65)
+
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Comment on the quality of predictions for different digits and on the overall
+prediction quality.
+
+Some digits have a really high quality of prediction (6 -> 0% error, 7 -> 0.9% error while others have a relatively worst quality (8 -> 10.3% error, 4 -> 13.8% error). Overall, the quality is quite good, with a mean misclassification error of 5.3%
+
+
+## 3.
+Find any 2 cases of digit “8” in the training data which were easiest to classify and 3 cases that were hardest to classify (i.e. having highest and lowest probabilities of the correct class). 
+
+```{r 1.3}
+#Find all fitted values classified as 8 (CL = 8), find the max and min probabilities in prob
+fitted_eight <- predict(digits_kknn, data = digits_train)
+length(fitted_eight)
+actual_eight <- digits_train$V65
+length(actual_eight)
+probs <- digits_kknn[["prob"]]
+length(probs)
+probs_eight <- probs[,9]
+
+my_df <- data.frame("actual" = actual_eight, "fitted" = fitted_eight , "prob" = probs)
+my_df
+maxp <- 0
+minp <- 1
+#probs_eight
+for(i in 1:length(probs_eight)){
+  if(factor(digits_kknn$fitted.values[i]) == 8){ #https://www.tutorialspoint.com/how-to-extract-the-factor-levels-from-factor-column-in-an-r-data-frame#:~:text=To%20extract%20the%20factor%20levels%20from%20factor%20column%2C%20we%20can,levels(df%24x).
+    maxp <- max(probs_eight[i], maxp)
+    minp <- min(probs_eight[i], minp)
+  }
+}
+print(maxp)
+print(minp)
+high_idx = c()
+low_idx = c()
+# Find all the index where p=1 and p= 1/3 :
+for(i in 1:length(probs_eight)){
+  if(probs_eight[i] == maxp){
+    high_idx <- append(high_idx, i)
+  }
+  if(probs_eight[i] == minp){
+    low_idx <- append(low_idx, i)
+  }
+}
+high_idx
+# 42  95 125 166 192 232 253 270 313 332 372 397 492 563 588 610 656
+low_idx
+# 228 362 364 580 648 674
+
+```
+
+Reshape features for each of these cases as matrix 8x8 and visualize the corresponding digits (by using e.g. heatmap() function with parameters Colv=NA and Rowv=NA) and comment on whether these cases seem to be hard or easy to recognize visually.
+
+```{r}
+visualise_dig <- function(idx, data){
+  #Given an index (idx) and a dataframe (data), visualize the digit at data[idx]
+  raw_dig <- data[idx,][-65]
+  mat = matrix(as.numeric(raw_dig), nrow = 8)
+  
+  heatmap(apply(t(mat),2,rev), Colv=NA, Rowv=NA) #https://stackoverflow.com/questions/16496210/rotate-a-matrix-in-r-by-90-degrees-clockwise 
+}
+visualise_dig(6, digits_train)
+```
+
+## 4.
+Fit a K-nearest neighbor classifiers to the training data for different values of K K = 1,2, … , 30 and plot the dependence of the training and validation misclassification errors on the value of K (in the same plot). How does the model complexity change when K increases and how does it affect the training and validation errors? Report the optimal K K according to this plot. Finally, estimate the test error for the model having the optimal K, compare it with the training and validation errors and make necessary conclusions about the model quality.
+
+```{r 1.4}
+
+```
+
+## 5.
+Fit K-nearest neighbor classifiers to the training data for different values of K K = 1,2, … , 30, compute the error for the validation data as cross-entropy ( when computing log of probabilities add a small constant within log, e.g. 1e-15, to avoid numerical problems) and plot the dependence of the validation error on the value of K K. What is the optimal K K value here? Assuming that response has multinomial distribution, why might the cross-entropy be a more suitable choice of the error function than the misclassification error for this problem?
+
+```{r 1.5}
+
+```
+
