@@ -40,8 +40,6 @@ digits_test = digit_data[id3,]
 Use training data to fit 30-nearest neighbor classifier with function kknn() and kernel=”rectangular” from package kknn and estimate:
 • Confusion matrices for the training and test data (use table())
 • Misclassification errors for the training and test data
-Comment on the quality of predictions for different digits and on the overall
-prediction quality.
 
 ```{r 1.2}
 library(kknn)
@@ -52,7 +50,6 @@ library(shipunov)
 digits_kknn <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_test, k = 30, kernel = "rectangular")
 
 
-
 #Confusion Matrix: 
 fit <- fitted(digits_kknn)
 predictions <- predict(digits_kknn, type='prob')
@@ -60,17 +57,72 @@ predictions
 print("Confusion matrix:")
 conf_mat <- table(digits_test$V65, fit)
 conf_mat
-cat("\n")
 shipunov::Misclass(fit, digits_test$V65)
 
 
 ```
 
+Comment on the quality of predictions for different digits and on the overall
+prediction quality.
+
+Some digits have a really high quality of prediction (6 -> 0% error, 7 -> 0.9% error while others have a relatively worst quality (8 -> 10.3% error, 4 -> 13.8% error). Overall, the quality is quite good, with a mean misclassification error of 5.3%
+
+
 ## 3.
-Find any 2 cases of digit “8” in the training data which were easiest to classify and 3 cases that were hardest to classify (i.e. having highest and lowest probabilities of the correct class). Reshape features for each of these cases as matrix 8x8 and visualize the corresponding digits (by using e.g. heatmap() function with parameters Colv=NA and Rowv=NA) and comment on whether these cases seem to be hard or easy to recognize visually.
+Find any 2 cases of digit “8” in the training data which were easiest to classify and 3 cases that were hardest to classify (i.e. having highest and lowest probabilities of the correct class). 
 
 ```{r 1.3}
+#Find all fitted values classified as 8 (CL = 8), find the max and min probabilities in prob
+fitted_eight <- predict(digits_kknn, data = digits_train)
+length(fitted_eight)
+actual_eight <- digits_train$V65
+length(actual_eight)
+probs <- digits_kknn[["prob"]]
+length(probs)
+probs_eight <- probs[,9]
 
+my_df <- data.frame("actual" = actual_eight, "fitted" = fitted_eight , "prob" = probs)
+my_df
+maxp <- 0
+minp <- 1
+#probs_eight
+for(i in 1:length(probs_eight)){
+  if(factor(digits_kknn$fitted.values[i]) == 8){ #https://www.tutorialspoint.com/how-to-extract-the-factor-levels-from-factor-column-in-an-r-data-frame#:~:text=To%20extract%20the%20factor%20levels%20from%20factor%20column%2C%20we%20can,levels(df%24x).
+    maxp <- max(probs_eight[i], maxp)
+    minp <- min(probs_eight[i], minp)
+  }
+}
+print(maxp)
+print(minp)
+high_idx = c()
+low_idx = c()
+# Find all the index where p=1 and p= 1/3 :
+for(i in 1:length(probs_eight)){
+  if(probs_eight[i] == maxp){
+    high_idx <- append(high_idx, i)
+  }
+  if(probs_eight[i] == minp){
+    low_idx <- append(low_idx, i)
+  }
+}
+high_idx
+# 42  95 125 166 192 232 253 270 313 332 372 397 492 563 588 610 656
+low_idx
+# 228 362 364 580 648 674
+
+```
+
+Reshape features for each of these cases as matrix 8x8 and visualize the corresponding digits (by using e.g. heatmap() function with parameters Colv=NA and Rowv=NA) and comment on whether these cases seem to be hard or easy to recognize visually.
+
+```{r}
+visualise_dig <- function(idx, data){
+  #Given an index (idx) and a dataframe (data), visualize the digit at data[idx]
+  raw_dig <- data[idx,][-65]
+  mat = matrix(as.numeric(raw_dig), nrow = 8)
+  
+  heatmap(apply(t(mat),2,rev), Colv=NA, Rowv=NA) #https://stackoverflow.com/questions/16496210/rotate-a-matrix-in-r-by-90-degrees-clockwise 
+}
+visualise_dig(6, digits_train)
 ```
 
 ## 4.
