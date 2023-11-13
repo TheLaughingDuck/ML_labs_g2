@@ -6,6 +6,7 @@ output: pdf_document
 ---
 
 # Question 3
+We are provided data covering the onset of diabetes within a five year period for a group of individuals. The data consists of nine variables including a binary response variable indicating presence of diabetes or not.
 
 ```{r}
 library(plotly)
@@ -34,11 +35,13 @@ plot_ly(type="scatter", mode="markers",
         data = diab_data,
         x = ~age,
         y = ~pg_con,
-        split = ~diabetes) %>%
+        colors = c("#1f77b4", "#ff7f0e"),
+        color = ~factor(x = diab_data$diabetes, labels = c("No diabetes", "Diabetes")),
+        legendgrouptitle = list(text = "Diagnosis")) %>%
   layout(title = "Fig 3.1 PGC vs Age, colored by diabetes")
 ```
 
-We do not think it will be easy to make the distinction using only these two . There is a large cluster of young people (ages ~20-25) that do not have diabetes, along with a significant number of outliers (among the non-diabetes people.) The people with diabetes however are much more spread out, with no smaller clusters. It appears as though people with diabetes tend to have slightly larger Plasma Glucose Concentration (PGC) values than people without diabetes. Thus it does appear as though there is some precedent for using only PGC values and Age as explanatory variables. It won't be easy or "clear-cut" though.
+We do not think it will be easy to make the distinction using only these two variables. In Figure 3.1 we observe a large cluster of young people (ages ~20-25) that do not have diabetes, along with a significant number of outliers (among the non-diabetes people.) The people with diabetes however are much more spread out, with no smaller clusters. It appears as though people with diabetes tend to have slightly larger Plasma Glucose Concentration (PGC) values than people without diabetes. Thus it does appear as though there is some precedent for using only PGC values and Age as explanatory variables. It won't be easy or "clear-cut" though.
 
 
 
@@ -98,9 +101,9 @@ p_r02 <- plot_ly(type="scatter", mode="markers",
         x = ~age,
         y = ~pg_con,
         colors = c("#1f77b4", "#ff7f0e"),
-        color = ~as.factor(c("Diabetes", "No diabetes")[diab_data$predicted_02+1]),
-        legendgrouptitle = list(text = "Diagnosis"))
-        #split = ~predicted_02)
+        color = ~factor(x = diab_data$predicted_02, labels = c("No diabetes", "Diabetes")),
+        legendgrouptitle = list(text = "Diagnosis")) %>%
+  layout(title = "Fig 3.2 PGC vs Age, colored by predicted diagnosis (r=0.2)")
 # add curve
 
 
@@ -110,8 +113,9 @@ p_r08 <- plot_ly(type="scatter", mode="markers",
         x = ~age,
         y = ~pg_con,
         colors = c("#1f77b4", "#ff7f0e"),
-        color = ~as.factor(c("Diabetes", "No diabetes")[diab_data$predicted_08+1]),
-        showlegend = FALSE) # We use the legend from the previous plot
+        color = ~factor(x = diab_data$predicted_08, labels = c("No diabetes", "Diabetes")),
+        showlegend = FALSE) %>%
+  layout(title = "Fig 3.? PGC vs Age, colored by predicted diagnosis (r=0.8)")
 # add curve
 
 
@@ -139,5 +143,42 @@ model2 <- glm(formula = diabetes ~ pg_con + age + z1 + z2 + z3 + z4 + z5,
     data = diab_data)
 
 summary(model2)
+
+diab_data_newmodel <- diab_data %>%
+  mutate(predicted_z_05 = as.integer(fitted(model2) >= 0.5))
+
+
+# Test plot
+p_new <- plot_ly(type="scatter", mode="markers",
+        data = diab_data_newmodel,
+        x = ~age,
+        y = ~pg_con,
+        colors = c("#1f77b4", "#ff7f0e"),
+        color = ~factor(x = diab_data_newmodel$predicted_z_05, labels = c("No diabetes", "Diabetes"))) %>%
+  layout(title = "Fig 3.? PGC vs Age, colored by predicted diagnosis (r=0.5)")
+
+p_new
+```
+
+
+
+
+```{r eval=F}
+fake_data <- data.frame(age=runif(1000, 0, 80), pg_con=runif(1000, 0, 200)) %>%
+  mutate(z1 = pg_con^4 * age^0,
+         z2 = pg_con^3 * age^1,
+         z3 = pg_con^2 * age^2,
+         z4 = pg_con^1 * age^3,
+         z5 = pg_con^0 * age^4) %>%
+  mutate(predicted = as.integer(predict.glm(model2, newdata = .) >= 0.5))
+
+# FAKE Plot
+plot_ly(type="scatter", mode="markers",
+        data = fake_data,
+        x = ~age,
+        y = ~pg_con,
+        colors = c("#1f77b4", "#ff7f0e"),
+        color = ~factor(x = fake_data$predicted, labels = c("No diabetes", "Diabetes"))) %>%
+  layout(title = "Fig 3.? PGC vs Age, colored by predicted diagnosis (r=0.5)")
 ```
 
