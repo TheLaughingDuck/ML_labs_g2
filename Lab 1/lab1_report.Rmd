@@ -9,6 +9,10 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Libraries
+```{r echo=FALSE}
+library(caret)
+```
 
 # Assignment 1
 
@@ -31,3 +35,218 @@ id3 = setdiff(id1,id2)
 digits_test = digit_data[id3,]
 ```
 
+# Assignment 2
+## 2.1
+> Divide it into training and test data (60/40) and scale it appropriately. In the coming steps, assume that motor_UPDRS is normally distributed and is a function of the voice characteristics, and since the data are scaled, no intercept is needed in the modelling.
+
+```{r}
+# Read in data
+df_park <- read.csv("parkinsons.csv")
+
+# Split training/test and scale
+set.seed(12345)
+train_ind <- sample(1:nrow(df_park), floor(nrow(df_park) * 0.6))
+df_train <- df_park[train_ind,]
+df_test <- df_park[-train_ind,]
+
+scaler <- preProcess(df_train)
+df_train_scaled <- predict(scaler, df_train)
+df_test_scaled <- predict(scaler, df_test)
+
+```
+
+## 2.2
+> Compute a linear regression model from the training data, estimate training and test MSE and comment on which variables contribute significantly to the model.
+
+```{r echo=FALSE}
+# Train model
+mod <- lm(motor_UPDRS ~ . + 0 - subject. - total_UPDRS, data=df_train_scaled) # https://stats.stackexchange.com/questions/143155/doing-multiple-regression-without-intercept-in-r-without-changing-data-dimensio
+
+# Predict values
+pred_train <- data.frame(pred=predict(mod, df_train_scaled), act=df_train_scaled$motor_UPDRS)
+pred_test <- data.frame(pred=predict(mod, df_test_scaled), act=df_test_scaled$motor_UPDRS)
+
+# Compute MSE
+# https://www.statology.org/how-to-calculate-mse-in-r/
+mse_train <- mean((pred_train$act - pred_train$pred)^2)
+mse_test <- mean((pred_test$act - pred_test$pred)^2)
+
+cat("MSE training data: ", mse_train, 
+    "\nMSE test data: ", mse_test,
+    "\n\n",
+    sep="")
+summary(mod)
+
+```
+
+The total_UPDRS variables has by far the biggest impact on the model. If this variable is included in the model, the MSE on both the training and test data are very good at about 0.09. The MSE on the test data is slightly higher than it is on the training data, which suggests the model was not overfit to the training data. However, when this variable is removed from the model, the MSE rises from 0.09 to about 0.8-0.9. There is no description of the variable included in the assignment, but it may be very strongly, if not fully correlated with motor_UPDRS, causing it to be the main predictor in the model. If this is the case, it is probably a bad idea to include this variable in the model, as it pretty much represents the same thing as the y variable. 
+
+Either way, though, there are quite a few variables that are not significant. When including total_UPDRS in the model, Jitter.Abs., Jitter.DDP, Shimmer.APQ3, Shimmer.DDA, NHR, and HNR all have p-values above 0.7, and test_time, Jitter.PPQ5, Shimmer.dB., and DFA are also not significant. Not much pre-exploring of the data was done in the assignment before putting together the model, but it would be good to check if there is any multicollinearity happening within the Jitter and Shimmer categories. Similarly, NHR and HNR are similar measures and may be capturing the same information. 
+When total_UPDRS is removed, Jiter.RAP, Jitter.DDP, and RPDE have very high p-values, and Jitter..., Jitter.PPQ5, Shimmer.dB., Shimmer.APQ3, and Shimmer.DDA are also not significant. While not being significant, Shimmer.APQ3 has the largest coefficient value, meaning it has the biggest impact on the prediction.
+
+## 2.3a
+> Loglikelihood function that for a given parameter vector 𝜽 and dispersion 𝜎 computes the log-likelihood function log 𝑃(𝑇|𝜽, 𝜎) for the stated model and the training data.
+
+```{r}
+loglikelihood <- function(data, formula, theta, sigma) {
+  # Get variable names and y and x matrices
+  y_var <- all.vars(formula)[1]
+  x_var <- all.vars(formula)[2:length(all.vars(formula))]
+  
+  if (x_var == ".") {
+    x_var <- colnames(data)[colnames(data) != y_var]
+  }
+  
+  y <- data[, y_var]
+  x <- data[, x_var]
+  
+  # Get n observations
+  n <- nrow(data)
+  
+  # Compute log likelihood
+  log_likelihood <- -n * log(sqrt(2 * pi) * sigma) - 1 / (2 * sigma^2) * sum((y - t(theta) * x)^2)
+  
+  # print(cat("SIGMA = 0", sigma, "\n", theta))
+
+  return(log_likelihood)
+}
+
+```
+
+## 2.3b
+> Ridge function that for given vector 𝜽, scalar 𝜎 and scalar 𝜆 uses function from 3a and adds up a Ridge penalty 𝜆‖𝜽‖^2 to the minus log-likelihood.
+
+```{r}
+ridge <- function(v_theta_sigma, data, formula, lambda) {
+  theta <- v_theta_sigma[1:length(v_theta_sigma) - 1]
+  sigma <- v_theta_sigma[length(v_theta_sigma)]
+  
+  cat("Sigma:", sigma, "\nTheta:", theta, "\n\n")
+  
+  penalty <- lambda * sum(theta^2) # https://stackoverflow.com/questions/10933945/how-to-calculate-the-euclidean-norm-of-a-vector-in-r
+  min_loglikelihood <- -loglikelihood(data, formula, theta, sigma)
+  penalized_min_loglikelihood <- min_loglikelihood + penalty
+  
+  return(penalized_min_loglikelihood)
+}
+
+```
+
+## 2.3c
+> RidgeOptfunction that depends on scalar 𝜆, uses function from 3b and function optim() with method=”BFGS” to find the optimal 𝜽 and 𝜎 for the given 𝜆.
+
+```{r}
+ridge_opt <- function(data, formula, lambda) {
+  # # https://stackoverflow.com/questions/24623488/how-do-i-use-a-function-with-parameters-in-optim-in-r
+  # https://stackoverflow.com/questions/59517244/r-optim-can-i-pass-a-list-to-parameter-par
+  x_var <- all.vars(formula)[2:length(all.vars(formula))]
+  
+  if (x_var == ".") {
+    x_var <- colnames(data)[colnames(data) != y_var]
+  }
+  
+  opt <- optim(c(rep(0, length(x_var)), 1), ridge, data=data, formula=formula, lambda=lambda, method="BFGS")
+  opt_theta <- opt$par[1:length(opt$par) - 1]
+  opt_sigma <- opt$par[length(opt$par)]
+  
+  return(list(theta=opt_theta, sigma=opt_sigma))
+}
+
+```
+
+## 2.3d
+> Df function that for a given scalar 𝜆 computes the degrees of freedom of the Ridge model based on the training data.
+
+```{r}
+df <- function(data, formula, lambda) {
+  # Get x matrix
+  x_var <- all.vars(formula)[2:length(all.vars(formula))]
+  
+  if (x_var == ".") {
+    x_var <- colnames(data)[colnames(data) != y_var]
+  }
+  
+  x <- as.matrix(data[, x_var])
+  
+  # Compute trace of hat matrix
+  sum(diag((x %*% solve(t(x) %*% x + lambda * diag(ncol(x))) %*% t(x)))) # https://online.stat.psu.edu/stat508/lesson/5/5.1
+}
+
+```
+
+## 2.4
+> By using function RidgeOpt, compute optimal 𝜽 parameters for 𝜆 = 1, 𝜆 = 100 and 𝜆 = 1000. Use the estimated parameters to predict the motor_UPDRS values for training and test data and report the training and test MSE values. Which penalty parameter is most appropriate among the selected ones? Compute and compare the degrees of freedom of these models and make appropriate conclusions.
+
+```{r echo=FALSE}
+# Get opt theta and sigma for different lambdas
+l_param1 <- ridge_opt(df_train_scaled, motor_UPDRS ~ . - subject. - age - sex - test_time - total_UPDRS, lambda=1)
+l_param100 <- ridge_opt(df_train_scaled, motor_UPDRS ~ . - subject. - age - sex - test_time - total_UPDRS, lambda=100)
+l_param1000 <- ridge_opt(df_train_scaled, motor_UPDRS ~ . - subject. - age - sex - test_time - total_UPDRS, lambda=1000)
+
+# Function for computing MSE
+mse <- function(data, formula, theta) {
+  # Get variable names and y and x matrices
+  y_var <- all.vars(formula)[1]
+  x_var <- all.vars(formula)[2:length(all.vars(formula))]
+  
+  if (x_var == ".") {
+    x_var <- colnames(data)[colnames(data) != y_var]
+  }
+  
+  y <- data[, y_var]
+  x <- as.matrix(data[, x_var])
+  
+  y_hat <- x %*% theta
+  
+  # Compute MSE
+  mean((y_hat - y)^2)
+}
+
+# Get y hat on training and test for different lambdas
+mse_tr_1 <- mse(df_train_scaled, motor_UPDRS ~ ., l_param1$theta)
+mse_te_1 <- mse(df_test_scaled, motor_UPDRS ~ ., l_param1$theta)
+
+mse_tr_100 <- mse(df_train_scaled, motor_UPDRS ~ ., l_param100$theta)
+mse_te_100 <- mse(df_test_scaled, motor_UPDRS ~ ., l_param100$theta)
+
+mse_tr_1000 <- mse(df_train_scaled, motor_UPDRS ~ ., l_param1000$theta)
+mse_te_1000 <- mse(df_test_scaled, motor_UPDRS ~ ., l_param1000$theta)
+
+# Compute df for different models
+df_tr_1 <- df(df_train_scaled, motor_UPDRS ~ ., 1)
+df_te_1 <- df(df_test_scaled, motor_UPDRS ~ ., 1)
+
+df_tr_100 <- df(df_train_scaled, motor_UPDRS ~ ., 100)
+df_te_100 <- df(df_test_scaled, motor_UPDRS ~ ., 100)
+
+df_tr_1000 <- df(df_train_scaled, motor_UPDRS ~ ., 1000)
+df_te_1000 <- df(df_test_scaled, motor_UPDRS ~ ., 1000)
+
+# Report output
+cat("lambda = 1",
+    "\nMSE train: ", mse_tr_1,
+    "\nMSE test: ", mse_te_1,
+    "\ndf train: ", df_tr_1,
+    "\ndf test: ", df_te_1,
+    "\n\n",
+    "lambda = 100",
+    "\nMSE train: ", mse_tr_100,
+    "\nMSE test: ", mse_te_100,
+    "\ndf train: ", df_tr_100,
+    "\ndf test: ", df_te_100,
+    "\n\n",
+    "lambda = 1000",
+    "\nMSE train: ", mse_tr_1000,
+    "\nMSE test: ", mse_te_1000,
+    "\ndf train: ", df_tr_1000,
+    "\ndf test: ", df_te_1000,
+    sep=""
+)
+
+```
+
+Analysis here
+
+# Appendix
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
