@@ -6,11 +6,16 @@ output: pdf_document
 ---
 
 # Question 3
-We are provided data covering the onset of diabetes within a five year period for a group of individuals. The data consists of nine variables including a binary response variable indicating presence of diabetes or not.
+We are provided data covering the onset of diabetes within a five year period for a group of individuals. The data consists of nine variables including a binary response variable indicating the presence of diabetes or not. In Figure 3.1, we plot the Plasma Glucose Concentration (PGC) against age, and color datapoints by diagnosis. 
 
-```{r}
+We do not think it will be easy to make the distinction using only these two variables. In Figure 3.1 we observe a large cluster of young people (ages ~20-25) that do not have diabetes, along with a significant number of outliers (among the non-diabetes people.) The people with diabetes however are much more spread out, with no smaller clusters. It appears as though people with diabetes tend to have slightly larger Plasma Glucose Concentration (PGC) values than people without diabetes. Thus it does appear as though there is some precedent for using only PGC values and Age as explanatory variables. It won't be easy or "clear-cut" though.
+
+There is clearly some explanatory power within these two variables, but it is likely not enough to achieve a highly accurate logistic regression (classification) predictor.
+
+```{r, echo=F, message=F}
 library(plotly)
 library(magrittr)
+library(webshot2) #htmlwidgets
 
 # Read data
 diab_data <- read.csv("pima-indians-diabetes.csv")
@@ -33,28 +38,28 @@ logit <- function(z){
 }
 ```
 
-
-## 3.1
-See \textit{Machine Learning - A first course for engineers and scientists} (pp. 45-52) for a discussion on logistic regression.
-
-```{r, eval=F}
+```{r Figure 3.1, echo=F, out.width="70%", fig.align='center', eval=F}
 ## Must apparently be made a base R plot
-plot_ly(type="scatter", mode="markers",
+p_31 <- plot_ly(type="scatter", mode="markers",
         data = diab_data,
         x = ~age,
         y = ~pg_con,
         colors = c("#1f77b4", "#ff7f0e"),
         color = ~factor(x = diab_data$diabetes, labels = c("No diabetes", "Diabetes")),
         legendgrouptitle = list(text = "Diagnosis")) %>%
-  layout(title = "Fig 3.1 PGC vs Age, colored by diabetes")
+  layout(title = "Fig 3.1. PGC vs Age, colored by true diagnosis")
+
+# Create webshot
+htmlwidgets::saveWidget(widget=p_31, file="p_31.html")
+webshot(url="p_31.html", file="p_31.png")
 ```
 
-We do not think it will be easy to make the distinction using only these two variables. In Figure 3.1 we observe a large cluster of young people (ages ~20-25) that do not have diabetes, along with a significant number of outliers (among the non-diabetes people.) The people with diabetes however are much more spread out, with no smaller clusters. It appears as though people with diabetes tend to have slightly larger Plasma Glucose Concentration (PGC) values than people without diabetes. Thus it does appear as though there is some precedent for using only PGC values and Age as explanatory variables. It won't be easy or "clear-cut" though.
-
-
+See \textit{Machine Learning - A first course for engineers and scientists} (pp. 45-52) for a discussion on logistic regression.
 
 # 3.2
-```{r}
+We will now fit a logistic regression (classification) model using PGC and age to predict the presence of diabetes. We will initially use a classification threshold of $r = 0.5$. The model printout is
+
+```{r model1 training, echo=F}
 model1 <- glm(formula = diabetes ~pg_con + age,
     family = binomial(link = "logit"),
     data = diab_data)
@@ -73,35 +78,60 @@ mis_class_error <- 1- (diab_data$diabetes == diab_data$predicted_05) %>% sum() /
 cat("Misclassification error:", mis_class_error, "\n")
 ```
 
-The resulting model is
+Mathematically, our model predictor $g(\boldsymbol{x})$ can be represented as
 
 $$g(\boldsymbol{x}) = \frac{e^{z}}{1+e^{z}}$$
 
 where
 
-$$z = \boldsymbol{\theta}^T \boldsymbol{x} = (`r round(model1$coefficients, 4)`) \cdot (1, x_{\text{age}}, x_{\text{pg}})^T$$
+$$z = \boldsymbol{\theta}^T \boldsymbol{x} = (`r round(model1$coefficients, 4)`) \cdot (1, x_{\text{pg}}, x_{\text{age}})^T$$
 
+```{r Figure 3.2, echo=F, out.width="70%", fig.align='center', eval=F}
+r_05_curve <- function(x){
+  -model1$coefficients["(Intercept)"]/model1$coefficients["pg_con"] - (model1$coefficients["age"]*x)/model1$coefficients["pg_con"]
+}
 
-```{r, eval=F}
-# New plot
-
-plot_ly(type="scatter", mode="markers",
+# Create scatterplot of predicted diabetes diagnosis
+p_32 <- plot_ly(type="scatter", mode="markers",
         data = diab_data,
         x = ~age,
         y = ~pg_con,
-        split = ~predicted)
+        colors = c("#1f77b4", "#ff7f0e"),
+        color = ~factor(x = diab_data$predicted_05, labels = c("No diabetes", "Diabetes")),
+        legendgrouptitle = list(text = "Diagnosis")) %>%
+  layout(title = "Fig 3.2. PGC vs Age, colored by predicted diagnosis (r = 0.5)") %>%
+  
+  # Add curve
+  add_trace(inherit = F, type="scatter", mode="lines",
+            x = c(20,100),
+            y = c(r_05_curve(20), r_05_curve(100)),
+            name = "Classification boundary")
 
-# Add curve
+
+# Create webshot
+htmlwidgets::saveWidget(widget=p_32, file="p_32.html")
+webshot(url="p_32.html", file="p_32.png")
 ```
 
-The quality of this classification is ok, not perfect. The resulting predictions is visually precisely what could be expected when analysing Figure 3.1. The model essentially just takes what was stated before, about diabetic people being overrepresented among people with high PGC values. This means that there will be a high true/false pos/neg probability.
+In Figure 3.2, we see the same data as in Figure 3.1, but datapoints are now colored by the predicted diagnosis using the classification threshold $r = 0.5$. When comparing Figure 3.1 and 3.2 we see that the quality of the classification is decent at best. The resulting predictions is visually precisely what could be expected when analysing Figure 3.1. The model essentially just takes what was stated before, about diabetic people being overrepresented among people with high PGC values. This means that there will be a high true/false pos/neg probability.
 
 # 3.3
-Add curve
+The decision boundary for the first model will be the set of points that satisfy the following equation:
+
+$$g(\boldsymbol{x}) = \frac{e^{\boldsymbol{\theta}^T \boldsymbol{x}}}{1+e^{\boldsymbol{\theta}^T \boldsymbol{x}}} = \frac{1}{2} \implies \boldsymbol{\theta}^T \boldsymbol{x} = 0 \implies \theta_0 + \theta_1 \cdot x_1 + \theta_2 \cdot x_2 = 0 \implies x_2 = \frac{-\theta_0}{\theta_2} - \frac{\theta_1}{\theta_2} x_1.$$
+
+With our trained parameters, this comes out to the line
+
+$$y = ...$$
+
+*More complicated boundary*.
+When it comes to the expanded model, the decision boundary can be found as the solution to the same kind of equation as the simpler model, but the equation is now more complicated. It can however be solved numerically using the R `polyroot` function. The equation is
+
+$$\theta_0 + \theta_1 x_1 + \theta_2 \cdot x_2 + \theta_3 \cdot x_1^4 + \theta_4 \cdot x_1^3 x_2 + \theta_5 \cdot x_1^2 x_2^2 + \theta_6 \cdot x_1 x_2^3 + \theta_7 \cdot x_2^4 = 0$$
 
 # 3.4
 
-```{r, eval=F}
+```{r Figure 3.3, echo=F, out.width="70%", fig.align='center', eval=F}
 # Plotly named colours
 # https://community.plotly.com/t/plotly-colours-list/11730/3
 
@@ -114,7 +144,7 @@ p_r02 <- plot_ly(type="scatter", mode="markers",
         colors = c("#1f77b4", "#ff7f0e"),
         color = ~factor(x = diab_data$predicted_02, labels = c("No diabetes", "Diabetes")),
         legendgrouptitle = list(text = "Diagnosis")) %>%
-  layout(title = "Fig 3.2 PGC vs Age, colored by predicted diagnosis (r=0.2)")
+  layout(title = "Fig 3.? PGC vs Age, colored by predicted diagnosis (r=0.2)")
 # add curve
 
 
@@ -130,16 +160,21 @@ p_r08 <- plot_ly(type="scatter", mode="markers",
 # add curve
 
 
-subplot(p_r02, p_r08) %>%
-  layout(title = "Fig 3.4")
+a<-subplot(p_r02, p_r08) %>%
+  layout(title = "Fig 3.3. PGC vs Age, colored by predicted diagnosis (r = 0.2 and r = 0.5)")
+
+htmlwidgets::saveWidget(widget=a, file="a.html")
+webshot(url="a.html", file="a.png")
 ```
 
-Comment on Figure 3.4.
+Comment on Figure 3.3.
 
 
 ## 3.5
 
-```{r, eval=F}
+
+
+```{r Train model 2}
 # Create new variables z_1, ... z_5
 diab_data <- diab_data %>%
   mutate(z1 = pg_con^4 * age^0, 
@@ -157,22 +192,74 @@ summary(model2)
 
 diab_data_newmodel <- diab_data %>%
   mutate(predicted_z_05 = as.integer(fitted(model2) >= 0.5))
+```
 
+```{r Class boundaries model 2, echo=F}
+class_bound <- data.frame(age=numeric(),
+                          pgc = numeric(),
+                          group=numeric())
 
+age_values <- seq(20, 80, 0.1)
+pgc_values <- seq(0, 200, 0.1)
+for (age in age_values){
+  for (pgc in pgc_values){
+    # evaluate theta^T %*% (1, x_1, ..., x_2^4)
+    # It will be zero at the class boundary
+    value <- sum(model2$coefficients*c(1,
+                                       pgc,
+                                       age,
+                                       pgc^4 * age^0,
+                                       pgc^3 * age^1,
+                                       pgc^2 * age^2,
+                                       pgc^1 * age^3,
+                                       pgc^0 * age^4))
+    if (abs(value) < 0.01){
+      
+      # Split the boundary in two separate groups
+      # This was determined visually
+      if (pgc < 100){group <- 1}
+      else {group <- 2}
+      
+      # Save this point as a boundary point
+      class_bound[nrow(class_bound)+1,] <- c(age, pgc, group)
+    }
+  }
+}
+```
+
+```{r Figure 3.4, echo=F, eval=F}
 # Test plot
-p_new <- plot_ly(type="scatter", mode="markers",
-        data = diab_data_newmodel,
-        x = ~age,
-        y = ~pg_con,
-        colors = c("#1f77b4", "#ff7f0e"),
-        color = ~factor(x = diab_data_newmodel$predicted_z_05, labels = c("No diabetes", "Diabetes"))) %>%
-  layout(title = "Fig 3.? PGC vs Age, colored by predicted diagnosis (r=0.5)")
+p_model2 <- plot_ly(type="scatter", mode="markers",
+                    data = diab_data_newmodel,
+                    x = ~age,
+                    y = ~pg_con,
+                    colors = c("#1f77b4", "#ff7f0e"),
+                    color = ~factor(x = diab_data_newmodel$predicted_z_05,
+                                    labels = c("No diabetes", "Diabetes"))) %>%
+  
+  # Add classifaction boundary trace
+  add_trace(inherit = F, type="scatter", mode="lines",
+            data = class_bound,
+            x = ~age,
+            y = ~pgc,
+            line = list(color='#2ca02c'),
+            split = ~group,
+            showlegend=F) %>%
+  
+  # Configure layout
+  layout(title = "Fig 3.4 PGC vs Age, col. by pred. diagnosis (model 2)",
+         xaxis = list(range = c(0, 80)),
+         yaxis = list(range = c(0, 200)))
 
-p_new
+p_model2
+
+# Create webshots for the pdf report
+htmlwidgets::saveWidget(widget=p_model2, file="p_model2.html")
+webshot(url="p_model2.html", file="p_model2.png")
 ```
 
 
-
+# Extra / old code
 ```{r, eval=F}
 fake_data <- data.frame(age=runif(1000, 0, 80), pg_con=runif(1000, 0, 200)) %>%
   mutate(z1 = pg_con^4 * age^0,
@@ -189,6 +276,20 @@ plot_ly(type="scatter", mode="markers",
         y = ~pg_con,
         colors = c("#1f77b4", "#ff7f0e"),
         color = ~factor(x = fake_data$predicted, labels = c("No diabetes", "Diabetes"))) %>%
-  layout(title = "Fig 3.? PGC vs Age, colored by predicted diagnosis (r=0.5)")
+  layout(title = "Fig 3.? PGC vs Age, colored by predicted diagnosis (r=0.5)") %>%
+  
+  # Add classifaction trace
+  add_trace(inherit = F, type="scatter", mode="lines",
+            data = class_bound,
+            x = ~age,
+            y = ~pgc,
+            split = ~group)
+
+# Add trace!
+
 ```
+
+
+
+
 
