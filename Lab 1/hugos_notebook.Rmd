@@ -43,23 +43,25 @@ Use training data to fit 30-nearest neighbor classifier with function kknn() and
 
 ```{r 1.2}
 library(kknn)
-library(caret)
+#library(caret)
 library(shipunov)
 
 #Fitting the classifier
-digits_kknn <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_test, k = 30, kernel = "rectangular")
+digits_kknn_test <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_test, k = 30, kernel = "rectangular")
+kknn_fit_test <- fitted(digits_kknn)
+conf_mat_test <- table(obs = digits_test$V65, pred = kknn_fit_test)
+conf_mat_test
+
+digits_kknn_train <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_train, k = 30, kernel = "rectangular")
+kknn_fit_train <- fitted(digits_kknn_train)
+conf_mat_train <- table(obs = digits_train$V65, pred = kknn_fit_train)
+conf_mat_train
 
 
-#Confusion Matrix: 
-fit <- fitted(digits_kknn)
-predictions <- predict(digits_kknn, type='prob')
-predictions
-print("Confusion matrix:")
-conf_mat <- table(digits_test$V65, fit)
-conf_mat
-shipunov::Misclass(fit, digits_test$V65)
 
-
+#shipunov::Misclass(fit, digits_test$V65)
+shipunov::Misclass(fit, digits_train$V65)
+#For misclassification rte : do it manually (no shipunov)
 ```
 
 Comment on the quality of predictions for different digits and on the overall
@@ -73,6 +75,8 @@ Find any 2 cases of digit “8” in the training data which were easiest to cla
 
 ```{r 1.3}
 #Find all fitted values classified as 8 (CL = 8), find the max and min probabilities in prob
+
+
 fitted_eight <- predict(digits_kknn, data = digits_train)
 length(fitted_eight)
 actual_eight <- digits_train$V65
@@ -120,9 +124,9 @@ visualise_dig <- function(idx, data){
   raw_dig <- data[idx,][-65]
   mat = matrix(as.numeric(raw_dig), nrow = 8)
   
-  heatmap(apply(t(mat),2,rev), Colv=NA, Rowv=NA) #https://stackoverflow.com/questions/16496210/rotate-a-matrix-in-r-by-90-degrees-clockwise 
+  heatmap(apply(t(mat),2,rev), Colv=NA, Rowv=NA, col=paste("gray",99:1,sep="")) #https://stackoverflow.com/questions/16496210/rotate-a-matrix-in-r-by-90-degrees-clockwise 
 }
-visualise_dig(6, digits_train)
+visualise_dig(4, digits_train)
 ```
 
 ## 4.
@@ -130,6 +134,11 @@ Fit a K-nearest neighbor classifiers to the training data for different values o
 
 ```{r 1.4}
 
+for(i in 1:30){
+  #Fitting the classifier
+  digits_kknn <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_test, k = i, kernel = "rectangular")
+
+}
 ```
 
 ## 5.
