@@ -242,7 +242,9 @@ p_model2 <- plot_ly(type="scatter", mode="markers",
             data = class_bound,
             x = ~age,
             y = ~pgc,
-            split = ~group) %>%
+            line = list(color='#2ca02c'),
+            split = ~group,
+            showlegend=F) %>%
   
   # Configure layout
   layout(title = "Fig 3.4 PGC vs Age, col. by pred. diagnosis (model 2)",
