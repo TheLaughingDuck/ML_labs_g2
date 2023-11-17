@@ -43,13 +43,11 @@ Use training data to fit 30-nearest neighbor classifier with function kknn() and
 
 ```{r 1.2}
 library(kknn)
-#library(caret)
-library(shipunov)
 
 #Fitting the classifier
-digits_kknn_test <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_test, k = 30, kernel = "rectangular")
-kknn_fit_test <- fitted(digits_kknn)
-conf_mat_test <- table(obs = digits_test$V65, pred = kknn_fit_test)
+digits_kknn_test <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_valid, k = 30, kernel = "rectangular")
+kknn_fit_test <- fitted(digits_kknn_test)
+conf_mat_test <- table(obs = digits_valid$V65, pred = kknn_fit_test)
 conf_mat_test
 
 digits_kknn_train <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_train, k = 30, kernel = "rectangular")
@@ -58,16 +56,32 @@ conf_mat_train <- table(obs = digits_train$V65, pred = kknn_fit_train)
 conf_mat_train
 
 
-
-#shipunov::Misclass(fit, digits_test$V65)
-shipunov::Misclass(fit, digits_train$V65)
-#For misclassification rte : do it manually (no shipunov)
+#Misclassification error
+get_mean_misc_err <- function(conf_mat){
+  #Given a confusion matrix, return the misclassification error
+  (sum(conf_mat)-sum(diag(conf_mat)))/sum(conf_mat)
+}
+get_indiv_misc_err <- function(conf_mat){
+  #Given a confusion matrix, return the misclassification error for each digit
+  err = c()
+  for(i in 1:10){
+    #correct this
+    err[i] <- (sum(conf_mat[i,]-conf_mat[i,i])/sum(conf_mat[i,]))
+  }
+  return(Misc_error = err)
+}
+print("Misclassification error for test data :")
+get_mean_misc_err(conf_mat_test)
+get_indiv_misc_err(conf_mat_test)
+print("Misclassification error for train data :")
+get_mean_misc_err(conf_mat_train)
+get_indiv_misc_err(conf_mat_train)
 ```
 
-Comment on the quality of predictions for different digits and on the overall
-prediction quality.
+*Comment on the quality of predictions for different digits and on the overall
+prediction quality.*
 
-Some digits have a really high quality of prediction (6 -> 0% error, 7 -> 0.9% error while others have a relatively worst quality (8 -> 10.3% error, 4 -> 13.8% error). Overall, the quality is quite good, with a mean misclassification error of 5.3%
+Some digits have a really high quality of prediction (6 -> 0% error, 7 -> 0.9% error while others have a relatively worst quality (8 -> 10.3% error, 4 -> 13.8% error). Overall, the quality is quite good, with a mean misclassification error of 5.3% for the test data and 4.5% for the train data.
 
 
 ## 3.
@@ -76,31 +90,36 @@ Find any 2 cases of digit “8” in the training data which were easiest to cla
 ```{r 1.3}
 #Find all fitted values classified as 8 (CL = 8), find the max and min probabilities in prob
 
-
-fitted_eight <- predict(digits_kknn, data = digits_train)
+#Fitted values
+fitted_eight <- predict(digits_kknn_train, data = digits_train)
 length(fitted_eight)
+#True values
 actual_eight <- digits_train$V65
 length(actual_eight)
-probs <- digits_kknn[["prob"]]
+#Probabilities
+probs <- digits_kknn_train[["prob"]]
 length(probs)
+#Probabilities for 8
 probs_eight <- probs[,9]
+length(probs_eight)
 
-my_df <- data.frame("actual" = actual_eight, "fitted" = fitted_eight , "prob" = probs)
-my_df
+my_df <- data.frame("actual" = actual_eight, "fitted" = fitted_eight , "prob" = probs_eight)
+#filter my_df to only keep the 8s correclty fitted
+my_df <- my_df[my_df$actual == 8,]
+my_df <- my_df[my_df$fitted == 8,]
+
+#Find the max and min probabilities
 maxp <- 0
 minp <- 1
-#probs_eight
 for(i in 1:length(probs_eight)){
-  if(factor(digits_kknn$fitted.values[i]) == 8){ #https://www.tutorialspoint.com/how-to-extract-the-factor-levels-from-factor-column-in-an-r-data-frame#:~:text=To%20extract%20the%20factor%20levels%20from%20factor%20column%2C%20we%20can,levels(df%24x).
+  if(factor(digits_kknn_train$fitted.values[i]) == 8){         #https://www.tutorialspoint.com/how-to-extract-the-factor-levels-from-factor-column-in-an-r-data-frame#:~:text=To%20extract%20the%20factor%20levels%20from%20factor%20column%2C%20we%20can,levels(df%24x).
     maxp <- max(probs_eight[i], maxp)
     minp <- min(probs_eight[i], minp)
   }
 }
-print(maxp)
-print(minp)
+# Find all the index where p=maxp and p= minp :
 high_idx = c()
 low_idx = c()
-# Find all the index where p=1 and p= 1/3 :
 for(i in 1:length(probs_eight)){
   if(probs_eight[i] == maxp){
     high_idx <- append(high_idx, i)
@@ -110,9 +129,9 @@ for(i in 1:length(probs_eight)){
   }
 }
 high_idx
-# 42  95 125 166 192 232 253 270 313 332 372 397 492 563 588 610 656
+# 129  195  211  233  292  294  515  601  650  679  684  693  726  729  752  763  768  779 855  864  899  929 1006 1092 1134 1216 1227 1261 1295 1318 1355 1380 1387 1397 1419 1472 1533 1607 1646 1686
 low_idx
-# 228 362 364 580 648 674
+# 141  258  469  560  629  881 1274 1716
 
 ```
 
@@ -126,25 +145,139 @@ visualise_dig <- function(idx, data){
   
   heatmap(apply(t(mat),2,rev), Colv=NA, Rowv=NA, col=paste("gray",99:1,sep="")) #https://stackoverflow.com/questions/16496210/rotate-a-matrix-in-r-by-90-degrees-clockwise 
 }
-visualise_dig(4, digits_train)
+```
+
+```{r}
+#High probabilities
+for(i in 1:2){
+  visualise_dig(high_idx[i], digits_train)
+}
+#Low probabilities
+for(i in 1:3){
+  visualise_dig(low_idx[i], digits_train)
+}
+
 ```
 
 ## 4.
-Fit a K-nearest neighbor classifiers to the training data for different values of K K = 1,2, … , 30 and plot the dependence of the training and validation misclassification errors on the value of K (in the same plot). How does the model complexity change when K increases and how does it affect the training and validation errors? Report the optimal K K according to this plot. Finally, estimate the test error for the model having the optimal K, compare it with the training and validation errors and make necessary conclusions about the model quality.
+Fit a K-nearest neighbor classifiers to the training data for different values of K K = 1,2, … , 30 and plot the dependence of the training and validation misclassification errors on the value of K (in the same plot). 
+How does the model complexity change when K increases and how does it affect the training and validation errors? Report the optimal K K according to this plot. Finally, estimate the test error for the model having the optimal K, compare it with the training and validation errors and make necessary conclusions about the model quality.
 
 ```{r 1.4}
+k_values <- c()
+misc_errs_test <- c()
+misc_errs_train <- c()
 
-for(i in 1:30){
+
+
+for(i in c(1:30)){
   #Fitting the classifier
-  digits_kknn <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_test, k = i, kernel = "rectangular")
-
+  cat(i, " ")
+  #Test:
+  digits_kknn_test_i <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_valid, k = i, kernel = "rectangular")
+  #Train:
+  digits_kknn_train_i <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_train, k = i, kernel = "rectangular")
+  
+  kbetter <- train:kknn(formula = as.factor(V65) ~ . , data = digits_train, ks=i, kernel = "rectangular")
+  #Predicting the values
+  fitted_values_valid <- predict(digits_kknn_test_i, data = digits_valid)
+  fitted_values_train <- predict(digits_kknn_train_i, data = digits_train)
+  #Confusion matrix
+  conf_mat_test <- table(obs = digits_valid$V65, pred = fitted_values_valid)
+  conf_mat_train <- table(obs = digits_train$V65, pred = fitted_values_train)
+  #Misclassification error
+  misc_err_test <- get_mean_misc_err(conf_mat_test)
+  misc_err_train <- get_mean_misc_err(conf_mat_train)
+  
+  #Append to the vectors
+  k_values <- append(k_values, i)
+  misc_errs_test <- append(misc_errs_test, misc_err_test)
+  misc_errs_train <- append(misc_errs_train, misc_err_train)
 }
+df_ks <- data.frame("k" = k_values, "misc_err_test" = misc_errs_test, "misc_err_train" = misc_errs_train)
+```
+```{r}
+library(ggplot2)
+#Plotting misc_errs_test and misc_errs_train as a function of k
+ggplot(df_ks, aes(x = k, y = misc_err_test)) + geom_line() + geom_point() + geom_line(aes(y = misc_err_train), color = "red") + geom_point(aes(y = misc_err_train), color = "red") + ggtitle("Misc error as a function of k") + xlab("k") + ylab("Misc error")
+#Add legend to the plot
+
+```
+```{r}
+df_ks[3,]
+df_ks[4,]
+```
+
+It would seems like k=3 and k=4 have the lowest valid misclassification rate.
+Since k=3 have a lower training misclassification rate, we choose k=3 as the optimal k.
+The model complexity increases with k but it does not seem to affect the training and validation errors after k=3.
+
+```{r}
+#Estimation of the model for k=3
+
+#Fitting the classifier
+digits_kknn_test_3 <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_test, k = 3, kernel = "rectangular")
+digits_kknn_train_3 <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_train, k = 3, kernel = "rectangular")
+digits_kknn_valid_3 <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_valid, k = 3, kernel = "rectangular")
+
+#Predicting the values
+fitted_values_test_3 <- predict(digits_kknn_test_3, data = digits_test)
+fitted_values_train_3 <- predict(digits_kknn_train_3, data = digits_train)
+fitted_values_valid_3 <- predict(digits_kknn_valid_3, data = digits_valid)
+#Validation error
+conf_mat_test_3 <- table(obs = digits_test$V65, pred = fitted_values_test_3)
+conf_mat_train_3 <- table(obs = digits_train$V65, pred = fitted_values_train_3)
+conf_mat_valid_3 <- table(obs = digits_valid$V65, pred = fitted_values_valid_3)
+#Misclassification error
+misc_err_test_3 <- get_mean_misc_err(conf_mat_test_3)
+misc_err_train_3 <- get_mean_misc_err(conf_mat_train_3)
+misc_err_valid_3 <- get_mean_misc_err(conf_mat_valid_3)
+
+print(paste("Test error for k=3: ", misc_err_test_3))
+print(paste("Train error for k=3: ", misc_err_train_3))
+print(paste("Valid error for k=3: ", misc_err_valid_3))
+
 ```
 
 ## 5.
-Fit K-nearest neighbor classifiers to the training data for different values of K K = 1,2, … , 30, compute the error for the validation data as cross-entropy ( when computing log of probabilities add a small constant within log, e.g. 1e-15, to avoid numerical problems) and plot the dependence of the validation error on the value of K K. What is the optimal K K value here? Assuming that response has multinomial distribution, why might the cross-entropy be a more suitable choice of the error function than the misclassification error for this problem?
+Fit K-nearest neighbor classifiers to the training data for different values of K K = 1,2, … , 30, compute the error for the validation data as cross-entropy (when computing log of probabilities add a small constant within log, e.g. 1e-15, to avoid numerical problems) and plot the dependence of the validation error on the value of K K. What is the optimal K K value here? Assuming that response has multinomial distribution, why might the cross-entropy be a more suitable choice of the error function than the misclassification error for this problem?
+
+Cross Entropy :
+$$J(y,\hat{p}(y)) = -\sum_{i=1}^{n}\sum_{m=1}^{M}I(y_i=C_m)*log(\hat{p}(y_i=C_m))$$
+
 
 ```{r 1.5}
+get_cross_entropy <- function(prob, true_vals){
+  ce_sum <- 0
+  for(i in 1:length(true_vals)){ #for each prediction
+    truth <- true_vals[i] #Cm
+    ce_sum <- ce_sum + log(prob[i,truth+1] + 1e-15)
+  }
+  return (-1*ce_sum)
+}
 
+k_values <- c()
+x_ent_errs <- c()
+for(i in 1:30){
+  #Fitting the classifier
+  cat(i, " ")
+  #Valid:
+  digits_kknn_ce <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_valid, k = i, kernel = "rectangular")
+
+  #Cross entropy Error:
+  ce_err <- get_cross_entropy(digits_kknn_ce[["prob"]], digits_valid$V65)
+  
+  #Append to the vectors
+  k_values <- append(k_values, i)
+  x_ent_errs <- append(x_ent_errs, ce_err)
+  
+}
+df_CE <- data.frame("k" = k_values, "CE_err" = x_ent_errs)
 ```
 
+Plot:
+
+```{r}
+#Plotting misc_errs_test and misc_errs_train as a function of k
+ggplot(df_CE, aes(x = k, y = CE_err)) + geom_line() + geom_point() + ggtitle("CE error as a function of k") + xlab("k") + ylab("CE error")
+```
