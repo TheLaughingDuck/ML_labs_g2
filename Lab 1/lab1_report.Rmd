@@ -1,5 +1,5 @@
 ---
-title: "Lab 1 report"
+title: "Lab 1 Report"
 author: "Marijn Jaarsma & Simon Jorstedt & Hugo Morvan"
 date: "`r Sys.Date()`"
 output: pdf_document
@@ -60,7 +60,7 @@ df_test_scaled <- predict(scaler, df_test)
 
 ```{r echo=FALSE}
 # Train model
-mod <- lm(motor_UPDRS ~ . + 0 - subject. - total_UPDRS, data=df_train_scaled) # https://stats.stackexchange.com/questions/143155/doing-multiple-regression-without-intercept-in-r-without-changing-data-dimensio
+mod <- lm(motor_UPDRS ~ . + 0 - subject. - age - sex - test_time - total_UPDRS, data=df_train_scaled) # https://stats.stackexchange.com/questions/143155/doing-multiple-regression-without-intercept-in-r-without-changing-data-dimensio
 
 # Predict values
 pred_train <- data.frame(pred=predict(mod, df_train_scaled), act=df_train_scaled$motor_UPDRS)
@@ -93,8 +93,10 @@ loglikelihood <- function(data, formula, theta, sigma) {
   y_var <- all.vars(formula)[1]
   x_var <- all.vars(formula)[2:length(all.vars(formula))]
   
-  if (x_var == ".") {
+  if ("." %in% x_var) {
+    x_var_sub <- x_var[x_var != "."]
     x_var <- colnames(data)[colnames(data) != y_var]
+    x_var <- x_var[!(x_var %in% x_var_sub)]
   }
   
   y <- data[, y_var]
@@ -104,10 +106,8 @@ loglikelihood <- function(data, formula, theta, sigma) {
   n <- nrow(data)
   
   # Compute log likelihood
-  log_likelihood <- -n * log(sqrt(2 * pi) * sigma) - 1 / (2 * sigma^2) * sum((y - t(theta) * x)^2)
+  log_likelihood <- -n * log(sqrt(2 * pi * sigma^2)) - 1 / (2 * sigma^2) * sum((y - t(theta) * x)^2)
   
-  # print(cat("SIGMA = 0", sigma, "\n", theta))
-
   return(log_likelihood)
 }
 
@@ -120,8 +120,6 @@ loglikelihood <- function(data, formula, theta, sigma) {
 ridge <- function(v_theta_sigma, data, formula, lambda) {
   theta <- v_theta_sigma[1:length(v_theta_sigma) - 1]
   sigma <- v_theta_sigma[length(v_theta_sigma)]
-  
-  cat("Sigma:", sigma, "\nTheta:", theta, "\n\n")
   
   penalty <- lambda * sum(theta^2) # https://stackoverflow.com/questions/10933945/how-to-calculate-the-euclidean-norm-of-a-vector-in-r
   min_loglikelihood <- -loglikelihood(data, formula, theta, sigma)
@@ -139,10 +137,13 @@ ridge <- function(v_theta_sigma, data, formula, lambda) {
 ridge_opt <- function(data, formula, lambda) {
   # # https://stackoverflow.com/questions/24623488/how-do-i-use-a-function-with-parameters-in-optim-in-r
   # https://stackoverflow.com/questions/59517244/r-optim-can-i-pass-a-list-to-parameter-par
+  y_var <- all.vars(formula)[1]
   x_var <- all.vars(formula)[2:length(all.vars(formula))]
   
-  if (x_var == ".") {
+  if ("." %in% x_var) {
+    x_var_sub <- x_var[x_var != "."]
     x_var <- colnames(data)[colnames(data) != y_var]
+    x_var <- x_var[!(x_var %in% x_var_sub)]
   }
   
   opt <- optim(c(rep(0, length(x_var)), 1), ridge, data=data, formula=formula, lambda=lambda, method="BFGS")
@@ -160,10 +161,13 @@ ridge_opt <- function(data, formula, lambda) {
 ```{r}
 df <- function(data, formula, lambda) {
   # Get x matrix
+  y_var <- all.vars(formula)[1]
   x_var <- all.vars(formula)[2:length(all.vars(formula))]
   
-  if (x_var == ".") {
+  if ("." %in% x_var) {
+    x_var_sub <- x_var[x_var != "."]
     x_var <- colnames(data)[colnames(data) != y_var]
+    x_var <- x_var[!(x_var %in% x_var_sub)]
   }
   
   x <- as.matrix(data[, x_var])
@@ -178,10 +182,12 @@ df <- function(data, formula, lambda) {
 > By using function RidgeOpt, compute optimal 𝜽 parameters for 𝜆 = 1, 𝜆 = 100 and 𝜆 = 1000. Use the estimated parameters to predict the motor_UPDRS values for training and test data and report the training and test MSE values. Which penalty parameter is most appropriate among the selected ones? Compute and compare the degrees of freedom of these models and make appropriate conclusions.
 
 ```{r echo=FALSE}
+formula <- motor_UPDRS ~ . - subject. - age - sex - test_time - total_UPDRS
+
 # Get opt theta and sigma for different lambdas
-l_param1 <- ridge_opt(df_train_scaled, motor_UPDRS ~ . - subject. - age - sex - test_time - total_UPDRS, lambda=1)
-l_param100 <- ridge_opt(df_train_scaled, motor_UPDRS ~ . - subject. - age - sex - test_time - total_UPDRS, lambda=100)
-l_param1000 <- ridge_opt(df_train_scaled, motor_UPDRS ~ . - subject. - age - sex - test_time - total_UPDRS, lambda=1000)
+l_param1 <- ridge_opt(df_train_scaled, formula, lambda=1)
+l_param100 <- ridge_opt(df_train_scaled, formula, lambda=100)
+l_param1000 <- ridge_opt(df_train_scaled, formula, lambda=1000)
 
 # Function for computing MSE
 mse <- function(data, formula, theta) {
@@ -189,8 +195,10 @@ mse <- function(data, formula, theta) {
   y_var <- all.vars(formula)[1]
   x_var <- all.vars(formula)[2:length(all.vars(formula))]
   
-  if (x_var == ".") {
+  if ("." %in% x_var) {
+    x_var_sub <- x_var[x_var != "."]
     x_var <- colnames(data)[colnames(data) != y_var]
+    x_var <- x_var[!(x_var %in% x_var_sub)]
   }
   
   y <- data[, y_var]
@@ -203,24 +211,24 @@ mse <- function(data, formula, theta) {
 }
 
 # Get y hat on training and test for different lambdas
-mse_tr_1 <- mse(df_train_scaled, motor_UPDRS ~ ., l_param1$theta)
-mse_te_1 <- mse(df_test_scaled, motor_UPDRS ~ ., l_param1$theta)
+mse_tr_1 <- mse(df_train_scaled, formula, l_param1$theta)
+mse_te_1 <- mse(df_test_scaled, formula, l_param1$theta)
 
-mse_tr_100 <- mse(df_train_scaled, motor_UPDRS ~ ., l_param100$theta)
-mse_te_100 <- mse(df_test_scaled, motor_UPDRS ~ ., l_param100$theta)
+mse_tr_100 <- mse(df_train_scaled, formula, l_param100$theta)
+mse_te_100 <- mse(df_test_scaled, formula, l_param100$theta)
 
-mse_tr_1000 <- mse(df_train_scaled, motor_UPDRS ~ ., l_param1000$theta)
-mse_te_1000 <- mse(df_test_scaled, motor_UPDRS ~ ., l_param1000$theta)
+mse_tr_1000 <- mse(df_train_scaled, formula, l_param1000$theta)
+mse_te_1000 <- mse(df_test_scaled, formula, l_param1000$theta)
 
 # Compute df for different models
-df_tr_1 <- df(df_train_scaled, motor_UPDRS ~ ., 1)
-df_te_1 <- df(df_test_scaled, motor_UPDRS ~ ., 1)
+df_tr_1 <- df(df_train_scaled, formula, 1)
+df_te_1 <- df(df_test_scaled, formula, 1)
 
-df_tr_100 <- df(df_train_scaled, motor_UPDRS ~ ., 100)
-df_te_100 <- df(df_test_scaled, motor_UPDRS ~ ., 100)
+df_tr_100 <- df(df_train_scaled, formula, 100)
+df_te_100 <- df(df_test_scaled, formula, 100)
 
-df_tr_1000 <- df(df_train_scaled, motor_UPDRS ~ ., 1000)
-df_te_1000 <- df(df_test_scaled, motor_UPDRS ~ ., 1000)
+df_tr_1000 <- df(df_train_scaled, formula, 1000)
+df_te_1000 <- df(df_test_scaled, formula, 1000)
 
 # Report output
 cat("lambda = 1",
@@ -245,7 +253,9 @@ cat("lambda = 1",
 
 ```
 
-Analysis here
+Interestingly, the test MSE is a little bit better than the train MSE when lambda = 1. This could be due to a fortunate choice in train/test split, but it at least suggests this model is not overfitting to the data. However, this is not a reason to pick this model over the others, as both other models only show a small difference between the train and test MSE. This could be a signifier that the model could be more complex, but, again, it does show that neither model is overfitted to the data. The difference in MSE between the lambda = 100 and lambda = 1000 models is relatively small - only about 0.1 - compared to the difference between the lambda = 1 and lambda = 100 models - about 0.32. Between the lambda = 100 and lambda = 1000 models, the degrees of freedom go down a lot from around 9/10 to 5/5.5. These models perform almost equally in terms of MSE, but show a big difference in degrees of freedom. The most appropriate choice would probably be the model with lambda = 100, as its performance is good compared to the others, but the higher degrees of freedom give more statistical power. 
+
+Reference: https://sites.utexas.edu/sos/degreesfreedom/
 
 # Appendix
 ```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
