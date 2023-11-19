@@ -2,7 +2,9 @@
 title: "Lab 1 Report"
 author: "Marijn Jaarsma & Simon Jorstedt & Hugo Morvan"
 date: "`r Sys.Date()`"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -10,8 +12,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Libraries
-```{r echo=FALSE}
+```{r libraries, echo=FALSE}
 library(caret)
+library(kknn)
+library(ggplot2)
+
 ```
 
 # Assignment 1
@@ -43,8 +48,6 @@ digits_test = digit_data[id3,]
 • Misclassification errors for the training and test data
 
 ```{r 1.2}
-library(kknn)
-
 #Fitting the classifier
 digits_kknn_test <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_valid, k = 30, kernel = "rectangular")
 kknn_fit_test <- fitted(digits_kknn_test)
@@ -186,7 +189,6 @@ df_ks <- data.frame("k" = k_values, "misc_err_test" = misc_errs_test, "misc_err_
 ```
 
 ```{r 1.4 plot}
-library(ggplot2)
 #Plotting misc_errs_test and misc_errs_train as a function of k
 ggplot(df_ks, aes(x = k, y = misc_err_test)) + geom_line() + geom_point() + geom_line(aes(y = misc_err_train), color = "red") + geom_point(aes(y = misc_err_train), color = "red") + ggtitle("Misc error as a function of k") + xlab("k") + ylab("Misc error")
 ```
@@ -269,7 +271,7 @@ ___
 ## 2.1
 > Divide it into training and test data (60/40) and scale it appropriately. In the coming steps, assume that motor_UPDRS is normally distributed and is a function of the voice characteristics, and since the data are scaled, no intercept is needed in the modelling.
 
-```{r}
+```{r 2.1}
 # Read in data
 df_park <- read.csv("parkinsons.csv")
 
@@ -288,7 +290,7 @@ df_test_scaled <- predict(scaler, df_test)
 ## 2.2
 > Compute a linear regression model from the training data, estimate training and test MSE and comment on which variables contribute significantly to the model.
 
-```{r echo=FALSE}
+```{r 2.2, echo=FALSE}
 # Train model
 mod <- lm(motor_UPDRS ~ . + 0 - subject. - age - sex - test_time - total_UPDRS, data=df_train_scaled) # https://stats.stackexchange.com/questions/143155/doing-multiple-regression-without-intercept-in-r-without-changing-data-dimensio
 
@@ -317,7 +319,7 @@ When total_UPDRS is removed, Jiter.RAP, Jitter.DDP, and RPDE have very high p-va
 ## 2.3a
 > Loglikelihood function that for a given parameter vector 𝜽 and dispersion 𝜎 computes the log-likelihood function log 𝑃(𝑇|𝜽, 𝜎) for the stated model and the training data.
 
-```{r}
+```{r 2.3a}
 loglikelihood <- function(data, formula, theta, sigma) {
   # Get variable names and y and x matrices
   y_var <- all.vars(formula)[1]
@@ -346,7 +348,7 @@ loglikelihood <- function(data, formula, theta, sigma) {
 ## 2.3b
 > Ridge function that for given vector 𝜽, scalar 𝜎 and scalar 𝜆 uses function from 3a and adds up a Ridge penalty 𝜆‖𝜽‖^2 to the minus log-likelihood.
 
-```{r}
+```{r 2.3b}
 ridge <- function(v_theta_sigma, data, formula, lambda) {
   theta <- v_theta_sigma[1:length(v_theta_sigma) - 1]
   sigma <- v_theta_sigma[length(v_theta_sigma)]
@@ -363,7 +365,7 @@ ridge <- function(v_theta_sigma, data, formula, lambda) {
 ## 2.3c
 > RidgeOptfunction that depends on scalar 𝜆, uses function from 3b and function optim() with method=”BFGS” to find the optimal 𝜽 and 𝜎 for the given 𝜆.
 
-```{r}
+```{r 2.3c}
 ridge_opt <- function(data, formula, lambda) {
   # # https://stackoverflow.com/questions/24623488/how-do-i-use-a-function-with-parameters-in-optim-in-r
   # https://stackoverflow.com/questions/59517244/r-optim-can-i-pass-a-list-to-parameter-par
@@ -388,7 +390,7 @@ ridge_opt <- function(data, formula, lambda) {
 ## 2.3d
 > Df function that for a given scalar 𝜆 computes the degrees of freedom of the Ridge model based on the training data.
 
-```{r}
+```{r 2.3d}
 df <- function(data, formula, lambda) {
   # Get x matrix
   y_var <- all.vars(formula)[1]
@@ -411,7 +413,7 @@ df <- function(data, formula, lambda) {
 ## 2.4
 > By using function RidgeOpt, compute optimal 𝜽 parameters for 𝜆 = 1, 𝜆 = 100 and 𝜆 = 1000. Use the estimated parameters to predict the motor_UPDRS values for training and test data and report the training and test MSE values. Which penalty parameter is most appropriate among the selected ones? Compute and compare the degrees of freedom of these models and make appropriate conclusions.
 
-```{r echo=FALSE}
+```{r 2.4, echo=FALSE}
 formula <- motor_UPDRS ~ . - subject. - age - sex - test_time - total_UPDRS
 
 # Get opt theta and sigma for different lambdas
@@ -488,5 +490,5 @@ Interestingly, the test MSE is a little bit better than the train MSE when lambd
 Reference: https://sites.utexas.edu/sos/degreesfreedom/
 
 # Appendix
-```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```{r appendix, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
 ```
