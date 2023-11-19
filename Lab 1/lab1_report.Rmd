@@ -20,7 +20,7 @@ library(ggplot2)
 ```
 
 # Assignment 1
-## 1.1
+## Assignment 1.1
 > Import the data into R and divide it into training, validation and test sets (50%/25%/25%) by using the partitioning principle specified in the lecture slides. 
 
 ```{r 1.1}
@@ -42,7 +42,7 @@ id3 = setdiff(id1,id2)
 digits_test = digit_data[id3,]
 ```
 
-## 2. 
+## Assignment 1.2
 >Use training data to fit 30-nearest neighbor classifier with function kknn() and kernel=”rectangular” from package kknn and estimate:
 • Confusion matrices for the training and test data (use table())
 • Misclassification errors for the training and test data
@@ -86,7 +86,7 @@ prediction quality.
 
 Some digits have a really high quality of prediction (6 -> 0% error, 7 -> 0.9% error while others have a relatively worst quality (8 -> 10.3% error, 4 -> 13.8% error). Overall, the quality is quite good, with a mean misclassification error of 5.3% for the test data and 4.5% for the train data.
 
-## 3.
+## Assignment 1.3
 >Find any 2 cases of digit “8” in the training data which were easiest to classify and 3 cases that were hardest to classify (i.e. having highest and lowest probabilities of the correct class). 
 
 ```{r 1.3}
@@ -153,7 +153,7 @@ for(i in 1:3){
 }
 ```
 
-## 4.
+## Assignment 1.4
 >Fit a K-nearest neighbor classifiers to the training data for different values of K K = 1,2, … , 30 and plot the dependence of the training and validation misclassification errors on the value of K (in the same plot). 
 How does the model complexity change when K increases and how does it affect the training and validation errors? Report the optimal K K according to this plot. Finally, estimate the test error for the model having the optimal K, compare it with the training and validation errors and make necessary conclusions about the model quality.
 
@@ -225,7 +225,7 @@ print(paste("Valid error for k=3: ", misc_err_valid_3))
 
 ```
 
-## 5.
+## Assignment 1.5
 >Fit K-nearest neighbor classifiers to the training data for different values of K K = 1,2, … , 30, compute the error for the validation data as cross-entropy (when computing log of probabilities add a small constant within log, e.g. 1e-15, to avoid numerical problems) and plot the dependence of the validation error on the value of K K. 
 
 Cross Entropy :
@@ -507,18 +507,6 @@ colnames(diab_data) <- c("n_pregnant", "PGC", "blood_pressure", "skindfold_thick
 logit <- function(z){
   exp(z) / (1 + exp(z))
 }
-```
-
-```{r not used, eval=F, echo=F, message=F}
-# Divide data train test?
-n_diab = dim(diab_data)[1]
-
-set.seed(7183723)
-id_diab_train = sample(1:n_diab, floor(n_diab*0.6))
-id_diab_test = setdiff(1:n_diab, id_diab_train)
-
-diab_data_train = diab_data[id_diab_train,]
-diab_data_test = diab_data[id_diab_test,]
 ```
 
 ```{r Figure 3.1, echo=F, out.width="70%", fig.align='center'}
