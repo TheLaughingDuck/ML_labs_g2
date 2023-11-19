@@ -621,7 +621,7 @@ p_32 <- plot_ly(type="scatter", mode="markers",
         y = ~PGC,
         colors = c("#1f77b4", "#ff7f0e"),
         color = ~factor(x = diab_data$predicted_05, labels = c("No diabetes", "Diabetes")),
-        legendgrouptitle = list(text = "Diagnosis")) %>%
+        legendgrouptitle = list(text = "Predicted diagnosis")) %>%
   layout(title = "Fig 3.2. PGC vs Age, colored by predicted diagnosis (r = 0.5)") %>%
   
   # Add curve
@@ -637,7 +637,7 @@ webshot(url="p_32.html", file="p_32.png")
 
 ```
 
-When comparing Figure 3.1 and 3.2 we see that the quality of the classification is decent at best. The resulting predictions are visually precisely what could be expected when analysing Figure 3.1. The model essentially implements what was discussed previously: diabetes is common among people with high PGC values. The missclassification error `r round(mis_class_error, 3)` reflects our model assessment, as it is good, but far from excellent. The decision boundary echoes this, as it clearly divides the data into high and low PGC values, but it also increases the "diabetes region" as Age increases.
+When comparing Figure 3.1 and 3.2 we see that the quality of the classification is decent at best. The resulting predictions are visually precisely what could be expected when analysing Figure 3.1. The model essentially implements what was discussed previously: diabetes is common among people with high PGC values. The \textbf{misclassification error `r round(mis_class_error, 3)`} reflects our model assessment, as it is good, but far from excellent. The decision boundary echoes this, as it clearly divides the data into high and low PGC values, but it also increases the "diabetes region" as Age increases.
 
 ## Assignment 3.4
 In Figure 3.3 we plot again PGC against Age values, but this time color points based on classification thresholds $r = 0.2$ and $r = 0.8$. To clarify, this is \textit{almost} the same model as discussed previously, except that the final classification threshold is changed in the definition of $\hat{y}(\boldsymbol{x})$.
@@ -655,7 +655,7 @@ p_r02 <- plot_ly(type="scatter", mode="markers",
         y = ~PGC,
         colors = c("#1f77b4", "#ff7f0e"),
         color = ~factor(x = diab_data$predicted_02, labels = c("No diabetes", "Diabetes")),
-        legendgrouptitle = list(text = "Diagnosis")) %>%
+        legendgrouptitle = list(text = "Predicted diagnosis")) %>%
   layout(title = "Fig 3.? PGC vs Age, colored by predicted diagnosis (r=0.2)")
 # add curve
 
@@ -766,7 +766,8 @@ p_model2 <- plot_ly(type="scatter", mode="markers",
                     y = ~PGC,
                     colors = c("#1f77b4", "#ff7f0e"),
                     color = ~factor(x = diab_data_newmodel$predicted_z_05,
-                                    labels = c("No diabetes", "Diabetes"))) %>%
+                                    labels = c("No diabetes", "Diabetes")),
+                    legendgrouptitle = list(text = "Predicted diagnosis")) %>%
   
   # Add classifaction boundary trace
   add_trace(inherit = F, type="scatter", mode="lines",
@@ -790,7 +791,7 @@ webshot(url="p_model2.html", file="p_model2.png")
 
 ```
 
-In Figure 3.4 we see a similar behaviour to the first model(s), but now the inclusion of the new features have allowed the model to take into account interplay between the PGC and Age features. Visually it looks promising, as the new decision boundary captures the large group of young people without diabetes, as well as the fact that diabetes is very common among individuals with high PGC values. It also captures the fact that for Ages from about $30$ onwards, the presence of diabetes increases. The missclassification rate of `r round(mis_class_error_model2, 3)` is only slightly lower than that of the first model (with $r = 0.5$). This indicates that potential benefits of including other features in the model should be investigated.
+In Figure 3.4 we see a similar behaviour to the first model(s), but now the inclusion of the new features have allowed the model to take into account interplay between the PGC and Age features. Visually it looks promising, as the new decision boundary captures the large group of young people without diabetes, as well as the fact that diabetes is very common among individuals with high PGC values. It also captures the fact that for Ages from about $30$ onwards, the presence of diabetes increases. The \textbf{misclassification error of `r round(mis_class_error_model2, 3)`} is only slightly lower than that of the first model (with $r = 0.5$). This indicates that potential benefits of including other features in the model should be investigated.
 
 On the other hand the boundary highlights a region with high Age (~50-80) and low PGC values (< 60) as indicative of diabetes. In fact the only datapoint in this region is incorrectly diagnosed, which we attribute as a side effect of the new transformed features, and thus we recommend ignoring the lower curve of the decision boundary.
 
