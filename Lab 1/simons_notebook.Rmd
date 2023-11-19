@@ -68,7 +68,7 @@ $$g(\boldsymbol{x}) = \frac{1}{1+e^{-z}}$$
 
 where
 
-$$z = \boldsymbol{\theta}^T \boldsymbol{x} = (\theta_0, \theta_1, \theta_2) \cdot (1, x_{\text{pg}}, x_{\text{age}})^T.$$
+$$z = \boldsymbol{\theta}^T \boldsymbol{x} = (\theta_0, \theta_1, \theta_2) \cdot (1, x_{\text{pgc}}, x_{\text{age}})^T.$$
 
 The decision boundary for this model will be the set of points that satisfy the following equation:
 
@@ -168,14 +168,23 @@ webshot(url="a.html", file="a.png")
 When analysing Figure 3.3, we find that the linear classification threshold simply has been moved down for $r = 0.2$, and up for $r = 0.8$. Specifically, it has been shifted by a constant $\frac{\ln (1/r-1)}{-\theta_2}$. This has the effect that many more, or many fewer datapoints respectively are classified as positive for diabetes.
 
 ## Assignment 3.5
+We now perform a basis function expansion by computing new features and including them in a new logistic regression model. For this new model, a classification threshold of $r = 0.5$ will be used. The new features are
 
-*More complicated boundary*.
-When it comes to the expanded model, the decision boundary can be found as the solution to the same kind of equation as the simpler model, but the equation is now more complicated. It can however be solved numerically using the R `polyroot` function. The equation is
+$$\begin{Bmatrix}
+z_1 = x_1^4\\
+z_2 = x_1^3x_2\\
+z_3 = x_1^2x_2^2\\
+z_4 = x_1x_2^3\\
+z_5 = x_2^4
+\end{Bmatrix}.$$
+
+These new features complicate the classification boundary, but the setup of the problem of finding the classification boundary is still the same. For our purposes it is solved numerically. The classification boundary consists of all points that satisfy the following equation.
 
 $$\theta_0 + \theta_1 x_1 + \theta_2 \cdot x_2 + \theta_3 \cdot x_1^4 + \theta_4 \cdot x_1^3 x_2 + \theta_5 \cdot x_1^2 x_2^2 + \theta_6 \cdot x_1 x_2^3 + \theta_7 \cdot x_2^4 = 0$$
 
+In Figure 3.4 we plot again the PGC against Age, and color datapoints based on predicted diagnosis by the new model. The classification boundary is included.
 
-```{r Train model 2}
+```{r Train model 2, echo=F}
 # Create new variables z_1, ... z_5
 diab_data <- diab_data %>%
   mutate(z1 = PGC^4 * age^0, 
@@ -189,13 +198,17 @@ model2 <- glm(formula = diabetes ~ PGC + age + z1 + z2 + z3 + z4 + z5,
     family = binomial(link = "logit"),
     data = diab_data)
 
-summary(model2)
+#summary(model2)
 
 diab_data_newmodel <- diab_data %>%
   mutate(predicted_z_05 = as.integer(fitted(model2) >= 0.5))
+
+# Extract misclassification error
+mis_class_error_model2 <- 1- (diab_data_newmodel$diabetes == diab_data_newmodel$predicted_z_05) %>% sum() / nrow(diab_data_newmodel)
 ```
 
 ```{r Class boundaries model 2, echo=F}
+# Find classification boundary points numerically for model 2
 class_bound <- data.frame(age=numeric(),
                           pgc = numeric(),
                           group=numeric())
@@ -229,7 +242,6 @@ for (age in age_values){
 ```
 
 ```{r Figure 3.4, echo=F, out.width="70%", fig.align='center'}
-# Test plot
 p_model2 <- plot_ly(type="scatter", mode="markers",
                     data = diab_data_newmodel,
                     x = ~age,
@@ -249,7 +261,7 @@ p_model2 <- plot_ly(type="scatter", mode="markers",
   
   # Configure layout
   layout(title = "Fig 3.4 PGC vs Age, col. by pred. diagnosis (model 2)",
-         xaxis = list(range = c(0, 80)),
+         xaxis = list(range = c(20, 80)),
          yaxis = list(range = c(0, 200)))
 
 #p_model2
@@ -259,6 +271,9 @@ htmlwidgets::saveWidget(widget=p_model2, file="p_model2.html")
 webshot(url="p_model2.html", file="p_model2.png")
 ```
 
+In Figure 3.4 we see a similar behaviour to the first model(s), but now the inclusion of the new features have allowed the model to take into account interplay between the PGC and Age features. Visually it looks promising, as the new decision boundary captures the large group of young people without diabetes, as well as the fact that diabetes is very common among individuals with high PGC values. It also captures the fact that for Ages from about $30$ onwards, the presence of diabetes increases. The missclassification rate of `r round(mis_class_error_model2, 3)` is only slightly lower than that of the first model (with $r = 0.5$). This indicates that potential benefits of including other features in the model should be investigated.
+
+On the other hand the boundary highlights a region with high Age (~50-80) and low PGC values (< 60) as indicative of diabetes. In fact the only datapoint in this region is incorrectly diagnosed, which we attribute as a side effect of the new transformed features, and thus we recommend ignoring the lower curve of the decision boundary.
 
 # Extra / old code
 ```{r, eval=F, echo=F}
