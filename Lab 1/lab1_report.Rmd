@@ -1,8 +1,9 @@
 ---
 title: "Lab 1 Report"
 author: "Marijn Jaarsma & Simon Jorstedt & Hugo Morvan"
-date: "`r Sys.Date()`"
+date: '`r Sys.Date()`'
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 ---
@@ -11,12 +12,22 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Declaration of work
+* For Assignment 1, Hugo did all programming and analysis, with some help from Marijn.
+
+* For Assignment 2, Marijn did all the programming and analysis.
+
+* For Assignment 3, Simon did all the programming and analysis.
+
+
 # Libraries
 ```{r libraries, echo=FALSE}
 library(caret)
 library(kknn)
 library(ggplot2)
-
+library(plotly)
+library(magrittr) # pipe operator
+library(webshot2) # htmlwidgets
 ```
 
 # Assignment 1
@@ -494,11 +505,6 @@ Reference: https://sites.utexas.edu/sos/degreesfreedom/
 We are provided data covering the onset of diabetes within a five year period for a group of individuals. The data consists of nine variables including a binary response variable indicating diagnosis: presence of diabetes or not. In Figure 3.1, we plot Plasma Glucose Concentration (PGC) against age in years. Datapoints are colored by diagnosis. 
 
 ```{r Setup, echo=F, message=F, warning=F}
-# Load packages
-library(plotly)
-library(magrittr) # pipe operator
-library(webshot2) # htmlwidgets
-
 # Read data
 diab_data <- read.csv("pima-indians-diabetes.csv")
 colnames(diab_data) <- c("n_pregnant", "PGC", "blood_pressure", "skindfold_thickness", "serum_insulin", "bmi", "diab_pedigree", "age", "diabetes")
@@ -541,11 +547,11 @@ $$g(\boldsymbol{x}) = \frac{1}{1+e^{-z}}$$
 
 where
 
-$$z = \boldsymbol{\theta}^T \boldsymbol{x} = (\theta_0, \theta_1, \theta_2) \cdot (1, x_{\text{pgc}}, x_{\text{age}})^T.$$
+$$z = \theta^T \boldsymbol{x} = (\theta_0, \theta_1, \theta_2) \cdot (1, x_{\text{pgc}}, x_{\text{age}})^T.$$
 
 The decision boundary for this model will be the set of points that satisfy the following equation:
 
-$$g(\boldsymbol{x}) = \frac{e^{\boldsymbol{\theta}^T \boldsymbol{x}}}{1+e^{\boldsymbol{\theta}^T \boldsymbol{x}}} = \frac{1}{2} \implies \boldsymbol{\theta}^T \boldsymbol{x} = 0 \implies \theta_0 + \theta_1 \cdot x_1 + \theta_2 \cdot x_2 = 0 \implies x_2 = \frac{-\theta_0}{\theta_2} - \frac{\theta_1}{\theta_2} x_1.$$
+$$g(\boldsymbol{x}) = \frac{e^{\theta^T \boldsymbol{x}}}{1+e^{\theta^T \boldsymbol{x}}} = \frac{1}{2} \implies \theta^T \boldsymbol{x} = 0 \implies \theta_0 + \theta_1 \cdot x_1 + \theta_2 \cdot x_2 = 0 \implies x_2 = \frac{-\theta_0}{\theta_2} - \frac{\theta_1}{\theta_2} x_1.$$
 
 In Figure 3.2 below, we plot again PGC values against Age, but datapoints are colored by predicted diagnosis (using $r = 0.5$). The discussed linear decision boundary of the model is also included.
 
