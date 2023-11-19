@@ -103,7 +103,7 @@ Confusion matrix and missclassification error for train data :
 
 ```{r 1.2.2, echo=FALSE}
 conf_mat_train
-cat("Mean isclassification error for train data :", round(get_mean_misc_err(conf_mat_train),4), " and individual misclassification error for each digit (0...9) :" , round(get_indiv_misc_err(conf_mat_train),4), "\n")
+cat("Mean misclassification error for train data :", round(get_mean_misc_err(conf_mat_train),4), " and individual misclassification error for each digit (0...9) :" , round(get_indiv_misc_err(conf_mat_train),4), "\n")
 
 ```
 
@@ -233,9 +233,15 @@ df_ks <- data.frame("k" = k_values, "misc_err_test" = misc_errs_test, "misc_err_
 
 ```{r 1.4-plot, echo=FALSE}
 #Plotting misc_errs_test and misc_errs_train as a function of k
-ggplot(df_ks, aes(x = k, y = misc_err_test )) + geom_line() + geom_point() + geom_line(aes(y = misc_err_train), color = "red") + geom_point(aes(y = misc_err_train), color = "red") + ggtitle("Misc error as a function of k") + xlab("k") + ylab("Misc error") + labs(color = "Misc error type") 
-
-
+ggplot(df_ks, aes(x = k, y = misc_err_test )) + 
+  geom_line() + 
+  geom_point() + 
+  geom_line(aes(y = misc_err_train), color = "red") + 
+  geom_point(aes(y = misc_err_train), color = "red") + 
+  ggtitle("Misc error as a function of k") + 
+  xlab("k") + 
+  ylab("Misc error") + 
+  labs(color = "Misc error type") 
 
 ```
 
@@ -543,7 +549,7 @@ cat("lambda = 1",
 
 ```
 
-Interestingly, the test MSE is a little bit better than the train MSE when lambda = 1. This could be due to a fortunate choice in train/test split, but it at least suggests this model is not overfitting to the data. However, this is not a reason to pick this model over the others, as both other models only show a small difference between the train and test MSE. This could be a signifier that the model could be more complex, but, again, it does show that neither model is overfitted to the data. The difference in MSE between the lambda = 100 and lambda = 1000 models is relatively small - only about 0.1 - compared to the difference between the lambda = 1 and lambda = 100 models - about 0.32. Between the lambda = 100 and lambda = 1000 models, the degrees of freedom go down a lot from around 9/10 to 5/5.5. These models perform almost equally in terms of MSE, but show a big difference in degrees of freedom. The most appropriate choice would probably be the model with lambda = 100, as its performance is good compared to the others, but the higher degrees of freedom give more statistical power. 
+Interestingly, the test MSE is a little bit better than the train MSE when lambda = 1. This could be due to a fortunate choice in train/test split, but it at least suggests this model is not overfitting to the data. However, this is not a reason to pick this model over the others, as both other models only show a small difference between the train and test MSE. This could be a signifier that the model could be more complex, but, again, it does show that neither model is overfitted to the data. The difference in MSE between the lambda = 100 and lambda = 1000 models is relatively small - only about 0.1 - compared to the difference between the lambda = 1 and lambda = 100 models - about 0.32. Between the lambda = 100 and lambda = 1000 models, the degrees of freedom go down a lot from around 9/10 to 5/5.5. These models perform almost equally in terms of MSE, but show a big difference in degrees of freedom. The most appropriate choice would probably be the model with lambda = 100, as its performance is good compared to the others, but the higher degrees of freedom give more statistical power. Additionally, the lambda = 1000 model is further penalizing the complexity of the model for small gain in MSE, while the small difference between train and test MSE suggests we might want to increase the complexity of the model. There is also quite a large difference between train and test degrees of freedom on lambda = 1000, which we would rather keep more constant. In conclusion, lambda = 100 is the better choice out of these three options.
 
 Reference: https://sites.utexas.edu/sos/degreesfreedom/
 
