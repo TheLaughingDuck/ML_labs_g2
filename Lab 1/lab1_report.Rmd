@@ -1,33 +1,33 @@
 ---
 title: "Lab 1 Report"
 author: "Marijn Jaarsma & Simon Jorstedt & Hugo Morvan"
-date: '`r Sys.Date()`'
+date: "`r Sys.Date()`"
 output:
-  pdf_document: default
-  html_document:
-    df_print: paged
+  pdf_document:
+    latex_engine: lualatex
+header-includes:
+  - |
+    ```{=latex}
+    \usepackage{fvextra}
+    \DefineVerbatimEnvironment{Highlighting}{Verbatim}{
+      showspaces = false,
+      showtabs = false,
+      breaklines,
+      commandchars=\\\{\}
+    }
+    ```
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Declaration of work
-* For Assignment 1, Hugo did all programming and analysis, with some help from Marijn.
-
-* For Assignment 2, Marijn did all the programming and analysis.
-
-* For Assignment 3, Simon did all the programming and analysis.
-
-
 # Libraries
 ```{r libraries, echo=FALSE}
 library(caret)
 library(kknn)
 library(ggplot2)
-library(plotly)
-library(magrittr) # pipe operator
-library(webshot2) # htmlwidgets
+
 ```
 
 # Assignment 1
@@ -328,7 +328,7 @@ Either way, though, there are quite a few variables that are not significant. Wh
 When total_UPDRS is removed, Jiter.RAP, Jitter.DDP, and RPDE have very high p-values, and Jitter..., Jitter.PPQ5, Shimmer.dB., Shimmer.APQ3, and Shimmer.DDA are also not significant. While not being significant, Shimmer.APQ3 has the largest coefficient value, meaning it has the biggest impact on the prediction.
 
 ## 2.3a
-> Loglikelihood function that for a given parameter vector 𝜽 and dispersion 𝜎 computes the log-likelihood function log 𝑃(𝑇|𝜽, 𝜎) for the stated model and the training data.
+Loglikelihood function that for a given parameter vector $\boldsymbol{\theta}$ and dispersion \sigma computes the log-likelihood function $log P(T | \boldsymbol{\theta}, \sigma)$ for the stated model and the training data.
 
 ```{r 2.3a}
 loglikelihood <- function(data, formula, theta, sigma) {
@@ -357,7 +357,7 @@ loglikelihood <- function(data, formula, theta, sigma) {
 ```
 
 ## 2.3b
-> Ridge function that for given vector 𝜽, scalar 𝜎 and scalar 𝜆 uses function from 3a and adds up a Ridge penalty 𝜆‖𝜽‖^2 to the minus log-likelihood.
+Ridge function that for given vector $\boldsymbol{\theta}$, scalar $\sigma$ and scalar $\lambda$ uses function from 3a and adds up a Ridge penalty $\lambda||\boldsymbol{\theta}||^2$ to the minus log-likelihood.
 
 ```{r 2.3b}
 ridge <- function(v_theta_sigma, data, formula, lambda) {
@@ -374,7 +374,7 @@ ridge <- function(v_theta_sigma, data, formula, lambda) {
 ```
 
 ## 2.3c
-> RidgeOptfunction that depends on scalar 𝜆, uses function from 3b and function optim() with method=”BFGS” to find the optimal 𝜽 and 𝜎 for the given 𝜆.
+RidgeOptfunction that depends on scalar $\lambda$, uses function from 3b and function optim() with method=”BFGS” to find the optimal $\boldsymbol{\theta}$ and $\sigma$ for the given $\lambda$.
 
 ```{r 2.3c}
 ridge_opt <- function(data, formula, lambda) {
@@ -399,7 +399,7 @@ ridge_opt <- function(data, formula, lambda) {
 ```
 
 ## 2.3d
-> Df function that for a given scalar 𝜆 computes the degrees of freedom of the Ridge model based on the training data.
+Df function that for a given scalar $\lambda$ computes the degrees of freedom of the Ridge model based on the training data.
 
 ```{r 2.3d}
 df <- function(data, formula, lambda) {
@@ -422,7 +422,7 @@ df <- function(data, formula, lambda) {
 ```
 
 ## 2.4
-> By using function RidgeOpt, compute optimal 𝜽 parameters for 𝜆 = 1, 𝜆 = 100 and 𝜆 = 1000. Use the estimated parameters to predict the motor_UPDRS values for training and test data and report the training and test MSE values. Which penalty parameter is most appropriate among the selected ones? Compute and compare the degrees of freedom of these models and make appropriate conclusions.
+By using function RidgeOpt, compute optimal $\boldsymbol{\theta}$ parameters for $\lambda = 1$, $\lambda = 100$ and $\lambda = 1000$. Use the estimated parameters to predict the motor_UPDRS values for training and test data and report the training and test MSE values. Which penalty parameter is most appropriate among the selected ones? Compute and compare the degrees of freedom of these models and make appropriate conclusions.
 
 ```{r 2.4, echo=FALSE}
 formula <- motor_UPDRS ~ . - subject. - age - sex - test_time - total_UPDRS
@@ -505,6 +505,11 @@ Reference: https://sites.utexas.edu/sos/degreesfreedom/
 We are provided data covering the onset of diabetes within a five year period for a group of individuals. The data consists of nine variables including a binary response variable indicating diagnosis: presence of diabetes or not. In Figure 3.1, we plot Plasma Glucose Concentration (PGC) against age in years. Datapoints are colored by diagnosis. 
 
 ```{r Setup, echo=F, message=F, warning=F}
+# Load packages
+library(plotly)
+library(magrittr) # pipe operator
+library(webshot2) # htmlwidgets
+
 # Read data
 diab_data <- read.csv("pima-indians-diabetes.csv")
 colnames(diab_data) <- c("n_pregnant", "PGC", "blood_pressure", "skindfold_thickness", "serum_insulin", "bmi", "diab_pedigree", "age", "diabetes")
@@ -547,11 +552,11 @@ $$g(\boldsymbol{x}) = \frac{1}{1+e^{-z}}$$
 
 where
 
-$$z = \theta^T \boldsymbol{x} = (\theta_0, \theta_1, \theta_2) \cdot (1, x_{\text{pgc}}, x_{\text{age}})^T.$$
+$$z = \boldsymbol{\theta}^T \boldsymbol{x} = (\theta_0, \theta_1, \theta_2) \cdot (1, x_{\text{pgc}}, x_{\text{age}})^T.$$
 
 The decision boundary for this model will be the set of points that satisfy the following equation:
 
-$$g(\boldsymbol{x}) = \frac{e^{\theta^T \boldsymbol{x}}}{1+e^{\theta^T \boldsymbol{x}}} = \frac{1}{2} \implies \theta^T \boldsymbol{x} = 0 \implies \theta_0 + \theta_1 \cdot x_1 + \theta_2 \cdot x_2 = 0 \implies x_2 = \frac{-\theta_0}{\theta_2} - \frac{\theta_1}{\theta_2} x_1.$$
+$$g(\boldsymbol{x}) = \frac{e^{\boldsymbol{\theta}^T \boldsymbol{x}}}{1+e^{\boldsymbol{\theta}^T \boldsymbol{x}}} = \frac{1}{2} \implies \boldsymbol{\theta}^T \boldsymbol{x} = 0 \implies \theta_0 + \theta_1 \cdot x_1 + \theta_2 \cdot x_2 = 0 \implies x_2 = \frac{-\theta_0}{\theta_2} - \frac{\theta_1}{\theta_2} x_1.$$
 
 In Figure 3.2 below, we plot again PGC values against Age, but datapoints are colored by predicted diagnosis (using $r = 0.5$). The discussed linear decision boundary of the model is also included.
 
