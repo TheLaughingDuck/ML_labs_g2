@@ -26,6 +26,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(caret)
 library(kknn)
 library(ggplot2)
+library(tidyr)
 
 ```
 
@@ -227,17 +228,18 @@ for(i in c(1:30)){
   misc_errs_test <- append(misc_errs_test, misc_err_test)
   misc_errs_train <- append(misc_errs_train, misc_err_train)
 }
-df_ks <- data.frame("k" = k_values, "misc_err_test" = misc_errs_test, "misc_err_train" = misc_errs_train)
+df_ks <- data.frame("k" = k_values, "validation_error" = misc_errs_test, "train_error" = misc_errs_train)
 
 ```
 
 ```{r 1.4-plot, echo=FALSE}
 #Plotting misc_errs_test and misc_errs_train as a function of k
-ggplot(df_ks, aes(x = k, y = misc_err_test )) + 
+
+df_ks_piv <- pivot_longer(df_ks, c("validation_error", "train_error"))
+
+ggplot(df_ks_piv, aes(x = k, y = value, color = name)) + 
   geom_line() + 
   geom_point() + 
-  geom_line(aes(y = misc_err_train), color = "red") + 
-  geom_point(aes(y = misc_err_train), color = "red") + 
   ggtitle("Misc error as a function of k") + 
   xlab("k") + 
   ylab("Misc error") + 
