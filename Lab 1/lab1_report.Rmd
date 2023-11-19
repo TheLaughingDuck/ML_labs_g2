@@ -5,30 +5,31 @@ date: "`r Sys.Date()`"
 output:
   pdf_document:
     latex_engine: lualatex
-header-includes:
-  - |
-    ```{=latex}
-    \usepackage{fvextra}
-    \DefineVerbatimEnvironment{Highlighting}{Verbatim}{
-      showspaces = false,
-      showtabs = false,
-      breaklines,
-      commandchars=\\\{\}
-    }
-    ```
+    pandoc_args: --listings
+    includes:
+      in_header: preamble.tex
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r libraries, echo=FALSE, message=FALSE}
+```{r libraries, echo=FALSE, message=FALSE, warning=FALSE}
 library(caret)
 library(kknn)
 library(ggplot2)
 library(tidyr)
 
 ```
+# Statement of Contribution
+
+* Assignment 1 was coded and analyzed by Hugo, with help from Simon and Marijn on specific points.
+
+* Assignment 2 was coded and analyzed by Marijn.
+
+* Assignment 3 was coded and analyzed by Simon.
+
+* All code and analysis was discussed by the full group before submitting.
 
 # Assignment 1
 ## Assignment 1.1
