@@ -30,15 +30,15 @@ digit_data <- read.csv("optdigits.csv", header=FALSE)
 
 # Partition data (according to Oleg)
 n = dim(digit_data)[1]
-
 set.seed(12345)
 id = sample(1:n, floor(n*0.5))
 digits_train = digit_data[id,]
-id1 = setdiff(1:n, id)
 
+id1 = setdiff(1:n, id)
 set.seed(12345)
 id2 = sample(id1, floor(n*0.25))
 digits_valid = digit_data[id2,]
+
 id3 = setdiff(id1,id2)
 digits_test = digit_data[id3,]
 
@@ -57,14 +57,14 @@ Use training data to fit 30-nearest neighbor classifier with function kknn() and
 digits_kknn_test <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_valid, k = 30, kernel = "rectangular")
 kknn_fit_test <- fitted(digits_kknn_test)
 conf_mat_test <- table(obs = digits_valid$V65, pred = kknn_fit_test)
-print("Confusion matrix for validation data :")
+#print("Confusion matrix for validation data :")
 #conf_mat_test
 
 digits_kknn_train <- kknn(formula = as.factor(V65) ~ . , train = digits_train, test = digits_train, k = 30, kernel = "rectangular")
 kknn_fit_train <- fitted(digits_kknn_train)
 conf_mat_train <- table(obs = digits_train$V65, pred = kknn_fit_train)
-print("Confusion matrix for train data :")
-conf_mat_train
+#print("Confusion matrix for train data :")
+#conf_mat_train
 
 #Misclassification error
 get_mean_misc_err <- function(conf_mat){
@@ -223,7 +223,7 @@ df_ks <- data.frame("k" = k_values, "misc_err_test" = misc_errs_test, "misc_err_
 
 ```{r 1.4-plot, echo=FALSE}
 #Plotting misc_errs_test and misc_errs_train as a function of k
-ggplot(df_ks, aes(x = k, y = misc_err_test, )) + geom_line() + geom_point() + geom_line(aes(y = misc_err_train), color = "red") + geom_point(aes(y = misc_err_train), color = "red") + ggtitle("Misc error as a function of k") + xlab("k") + ylab("Misc error") + labs(color = "Misc error type") 
+ggplot(df_ks, aes(x = k, y = misc_err_test )) + geom_line() + geom_point() + geom_line(aes(y = misc_err_train), color = "red") + geom_point(aes(y = misc_err_train), color = "red") + ggtitle("Misc error as a function of k") + xlab("k") + ylab("Misc error") + labs(color = "Misc error type") 
 
 
 
