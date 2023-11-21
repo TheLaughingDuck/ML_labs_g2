@@ -1,0 +1,46 @@
+---
+title: "Simons_document"
+author: "Simon Jorstedt"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+
+# Assignment 3
+
+## Setup
+
+```{r}
+library(magrittr)
+library(dplyr)
+
+crime_df <- read.csv("communities.csv")
+
+crime_df %>% View()
+```
+
+## Assignment 3.1
+We are given some crime data. From analysing it using PCA, we find that the first component (PC1) explains $98.574$% of the variance, and the second component (PC2) explains $0.396$% of the variance in the data. As such, only one component is needed to capture at least $95$% of the variance in the data.
+
+```{r, echo=F}
+# Assignment 3.1
+
+X <- crime_df %>%
+  select(-"ViolentCrimesPerPop") %>%
+  scale()
+
+S <- (1/nrow(X)) * t(X) %*% X
+
+# Find eigenvalues and vectors
+eigen(S)
+
+residuals <- prcomp(crime_df)
+lambda <- residuals$sdev^2
+lambda
+
+sprintf("%2.3f",lambda/sum(lambda)*100)
+screeplot(residuals)
+```
+
+
+## Assignment 3.2
