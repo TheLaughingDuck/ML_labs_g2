@@ -1,0 +1,100 @@
+---
+title: "lab2_Hugo"
+author: "Hugo"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries}
+library(glmnet)
+library(ggplot2)
+```
+
+
+## Assignment 1. Explicit regularization
+
+> The tecator.csv contains the results of study aimed to investigate whether a near infrared absorbance spectrum can be used to predict the fat content of samples of meat. For each meat sample the data consists of a 100 channel spectrum of absorbance records and the levels of moisture (water), fat and protein. The absorbance is -log10 of the transmittance measured by the spectrometer. The moisture, fat and protein are determined by analytic chemistry.
+
+> Divide data randomly into train and test (50/50) by using the codes from the lectures.
+
+```{r data1}
+# 1.0
+data=read.csv("tecator.csv")
+
+n=dim(data)[1]
+set.seed(12345)
+id=sample(1:n, floor(n*0.5))
+train=data[id,]
+test=data[-id,]
+```
+
+### 1.1
+> 1. Assume that Fat can be modeled as a linear regression in which absorbance characteristics (Channels) are used as features. Report the underlying probabilistic model, fit the linear regression to the training data and estimate the training and test errors. Comment on the quality of fit and prediction and therefore on the quality of model.
+
+```{r 1.1, warning=FALSE}
+# 1.1
+lin_mod <- lm(Fat ~ . -Moisture -Protein, data = train)
+#summary(lin_mod)
+
+predic_train <- predict.lm(lin_mod, train)
+train_error <- mean((train$Fat - predic_train)^2)
+cat("train error (using predict()):", train_error, "\n")
+fitted_train <- fitted(lin_mod, train)
+train_error2 <- mean((train$Fat - fitted_train)^2)
+cat("train error (using fitted()):", train_error2, "\n")
+
+predic_test <- predict.lm(lin_mod, test)
+test_error <- mean((test$Fat - predic_test)^2)
+cat("test error (using predic()):", test_error, "\n")
+fitted_test <- fitted(lin_mod, test)
+test_error2 <- mean((test$Fat - fitted_test)^2)
+cat("test error (using fitted()):", test_error2, "\n")
+
+```
+
+### 1.2
+> 2. Assume now that Fat can be modeled as a LASSO regression in which all
+Channels are used as features. Report the cost function that should be
+optimized in this scenario.
+
+The cost function that should be optimized is the following:
+$$\hat{\theta}^{lasso} = argmin\{\frac{1}n \sum_{i=1}^{n}(y_i-\theta_0-\theta_{1}x_{1i}-...-\theta_px_{pi})^2+\lambda\sum_{j=1}^{p}|\theta_j|\}$$
+
+### 1.3
+> 3. Fit the LASSO regression model to the training data. Present a plot illustrating how the regression coefficients depend on the log of penalty factor (log λ) and interpret this plot. What value of the penalty factor can be chosen if we want to select a model with only three features?
+
+```{r 1.3}
+lasso <- glmnet(as.matrix(train[,1:100]), train$Fat, alpha = 1)
+plot(lasso, xvar = "lambda", label = TRUE)
+
+```
+
+### 1.4
+> 4. Repeat step 3 but fit Ridge instead of the LASSO regression and compare the plots from steps 3 and 4. Conclusions?
+
+```{r 1.4}
+ridge <- glmnet(as.matrix(train[,1:100]), train$Fat, alpha = 0)
+plot(ridge, xvar = "lambda", label = TRUE)
+```
+
+### 1.5
+
+> 5. Use cross-validation with default number of folds to compute the optimal LASSO model. Present a plot showing the dependence of the CV score on log λ and comment how the CV score changes with log λ. Report the optimal λ and how many variables were chosen in this model. Does the information displayed in the plot suggests that the optimal λ value results in a statistically significantly better prediction than log λ = −4? 
+
+```{r 1.5.1}
+cv_lasso <- cv.glmnet(as.matrix(train[,1:100]), train$Fat, alpha = 1)
+plot(cv_lasso)
+```
+
+> Finally, create a scatter plot of the original test versus predicted test values for the model corresponding to optimal lambda and comment whether the model predictions are good.
+
+```{r 1.5.2, echo=FALSE, message=FALSE, warning=FALSE}
+predic_test <- predict(cv_lasso, newx = as.matrix(test[,1:100]), s = "lambda.min")
+plot(test$Fat, predic_test) + abline(1, 1)
+
+```
+The model predictions seems to be good as the points are close to the line y=x. 
