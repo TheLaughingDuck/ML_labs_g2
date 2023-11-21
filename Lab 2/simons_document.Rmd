@@ -65,6 +65,29 @@ Next, in Figure 3.3 we plot the PC scores of PC1 and PC2, and map the color of p
 plot(U[,1], U[,2], main="Fig 3.3. PC Scores")
 ```
 
+## Assignment 3.3
+
+```{r, echo=F}
+# Assignment 3.3
+
+## Split data into train and test
+n = nrow(crime_df)
+set.seed(12345)
+id=sample(1:n, floor(n*0.5))
+train=crime_df[id,]
+test=crime_df[-id,]
+
+```
+
+```{r}
+# Scaling
+scaled_train <- train %>% scale()
+
+# Get the centering and scale numerics
+center <- attributes(scaled_train)$"scaled:center"
+scale <- attributes(scaled_train)$"scaled:scale"
+```
+
 
 
 # Questions
