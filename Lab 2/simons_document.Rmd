@@ -34,13 +34,38 @@ S <- (1/nrow(X)) * t(X) %*% X
 # Find eigenvalues and vectors
 eigen(S)
 
-residuals <- prcomp(crime_df)
-lambda <- residuals$sdev^2
+result <- prcomp(crime_df)
+lambda <- result$sdev^2
 lambda
 
 sprintf("%2.3f",lambda/sum(lambda)*100)
-screeplot(residuals)
+screeplot(result)
+
+```
+
+## Assignment 3.2
+
+```{r}
+# Assignment 3.2
+
+PCA_2 <- princomp(crime_df)
+
+# U contains the PC loadings
+# The eigenvectors basically (columnwise)
+U <- PCA_2$loadings
+
+plot(U[,1], main="Fig 3.2. Traceplot, PC1")
+```
+
+In Figure 3.2 we see that the first feature of PC1 (state) carries by far the most explanatory power. The four following ones are population, household size, raceb, racew. These features might be related to each other.
+
+Next, in Figure 3.3 we plot the PC scores of PC1 and PC2, and map the color of points to the Violent Crimes per Population feature.
+
+```{r}
+plot(U[,1], U[,2], main="Fig 3.3. PC Scores")
 ```
 
 
-## Assignment 3.2
+
+# Questions
+What is the difference between `prcomp` and `princomp`? Why do we redo the PCA after we have already done it in 3.1?
