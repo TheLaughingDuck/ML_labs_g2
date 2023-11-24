@@ -13,10 +13,9 @@ output: pdf_document
 ```{r}
 library(magrittr)
 library(dplyr)
+library(caret)
 
 crime_df <- read.csv("communities.csv")
-
-crime_df %>% View()
 ```
 
 ## Assignment 3.1
@@ -80,12 +79,55 @@ test=crime_df[-id,]
 ```
 
 ```{r}
-# Scaling
-scaled_train <- train %>% scale()
+# Establish Scaling
+scaling <- train %>% preProcess()
 
-# Get the centering and scale numerics
-center <- attributes(scaled_train)$"scaled:center"
-scale <- attributes(scaled_train)$"scaled:scale"
+# Scale train and test data
+train <- predict(scaling, train)
+test <- predict(scaling, test)
+
+# Train lin reg model
+model1 <- lm(data = train,
+             formula = ViolentCrimesPerPop ~ .)
+
+# Compute train error (MSE)
+train_mse <- mean((train$ViolentCrimesPerPop - model1$fitted.values)^2)
+
+# Predict new responses for the test data
+test_pred <- predict(model1,
+                     test[,-which(names(test) == "ViolentCrimesPerPop")])
+test_mse <- mean((test$ViolentCrimesPerPop - test_pred)^2)
+
+cat("Train mse:", train_mse, "\n")
+cat("Test mse:", test_mse, "\n")
+```
+
+## Assignment 3.4
+
+```{r}
+## Assignment 3.4
+
+train_noresponse <- train[,-which(names(test) == "ViolentCrimesPerPop")]
+y_true <- train[,which(names(test) == "ViolentCrimesPerPop")]
+
+# cost function
+# data should NOT contain the response variable
+# No intercept is included in the underlying model
+cost_linreg <- function(theta){
+  y_pred <- as.matrix(train_noresponse) %*% theta
+  
+  cost <- mean((y_pred - y_true)^2)
+}
+
+# Iterate and stuff
+theta <- rep(0, 100)
+train_errors <- c()
+test_errors <- c()
+for(i in 1:1){
+  optim(theta, method="BFGS", fn = cost_linreg)
+  
+  # Compute
+}
 ```
 
 
