@@ -107,8 +107,8 @@ cat("Test mse:", test_mse, "\n")
 ```{r}
 ## Assignment 3.4
 
-train_noresponse <- train[,-which(names(test) == "ViolentCrimesPerPop")]
-y_true <- train[,which(names(test) == "ViolentCrimesPerPop")]
+train_noresponse <- train[,-which(names(train) == "ViolentCrimesPerPop")]
+y_true <- train[,which(names(train) == "ViolentCrimesPerPop")]
 
 # cost function
 # data should NOT contain the response variable
@@ -123,11 +123,69 @@ cost_linreg <- function(theta){
 theta <- rep(0, 100)
 train_errors <- c()
 test_errors <- c()
-for(i in 1:1){
-  optim(theta, method="BFGS", fn = cost_linreg)
+for(i in 1:1000){
+  cat(i, " ")
+  optim_object <- optim(theta, method="BFGS", fn = cost_linreg)
   
-  # Compute
+  # Compute and store train error
+  train_prediction <- as.matrix(train_noresponse) %*% optim_object$par
+  train_errors <- c(train_errors, mean((train_prediction - y_true)^2))
+  
+  # Compute and store test error
+  test_noresponse <- test[,-which(names(test) == "ViolentCrimesPerPop")]
+  test_prediction <- as.matrix(test_noresponse) %*% optim_object$par
+  test_errors <- c(test_errors, mean((test_prediction - y_true)^2))
+  
+  # Update theta
+  theta <- optim_object$par
 }
+
+ylim <- c(min(train_errors, test_errors), max(train_errors, test_errors))
+plot(test_errors, type="l", col="red", ylim = ylim)
+points(train_errors, type="l", col="blue")
+```
+
+
+
+```{r}
+## Assignment 3.4
+
+train_noresponse <- train[,-which(names(train) == "ViolentCrimesPerPop")]
+y_true <- train[,which(names(train) == "ViolentCrimesPerPop")]
+
+# cost function
+# data should NOT contain the response variable
+# No intercept is included in the underlying model
+cost_linreg <- function(theta){
+  y_pred <- as.matrix(train_noresponse) %*% theta
+  
+  cost <- mean((y_pred - y_true)^2)
+}
+
+# Iterate and stuff
+theta <- rep(0, 100)
+train_errors <- c()
+test_errors <- c()
+for(i in 1:10){
+  cat(i, " ")
+  optim_object <- optim(theta, method="BFGS", fn = cost_linreg)
+  
+  # Compute and store train error
+  train_prediction <- as.matrix(train_noresponse) %*% optim_object$par
+  train_errors <- c(train_errors, mean((train_prediction - y_true)^2))
+  
+  # Compute and store test error
+  test_noresponse <- test[,-which(names(test) == "ViolentCrimesPerPop")]
+  test_prediction <- as.matrix(test_noresponse) %*% optim_object$par
+  test_errors <- c(test_errors, mean((test_prediction - y_true)^2))
+  
+  # Update theta
+  theta <- optim_object$par
+}
+
+ylim <- c(min(train_errors, test_errors), max(train_errors, test_errors))
+plot(test_errors, type="l", col="red", ylim = ylim)
+points(train_errors, type="l", col="blue")
 ```
 
 
