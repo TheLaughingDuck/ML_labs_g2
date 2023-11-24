@@ -41,6 +41,9 @@ for(i in 1:n) {
   }
 }
 
+```
+
+```{r}
 M=3 # number of clusters
 w <- matrix(nrow=n, ncol=M) # weights
 pi <- vector(length = M) # mixing coefficients
@@ -84,27 +87,30 @@ for(it in 1:max_it) {
     }
   }
   
+  #Log likelihood computation.
+  llik[it] <- sum(log(rowSums(bern)))
+  
+  cat("iteration: ", it, "log likelihood: ", llik[it], "\n")
+  flush.console()
+  # Stop if the log likelihood has not changed significantly
+  # Your code here
+  if (length(llik[llik != 0]) >= 2) {
+    if (llik[it] - llik[it - 1] < 1e-5) {
+      break
+    }
+  }
+  
+  #M-step: ML parameter estimation from the data and weights
   # Compute new pi and mu from weights
   pi <- 1 / n * colSums(w)
   
   mu[1,] <- 1 / sum(w[, 1]) * colSums(w[, 1] * x)
   mu[2,] <- 1 / sum(w[, 2]) * colSums(w[, 2] * x)
   mu[3,] <- 1 / sum(w[, 3]) * colSums(w[, 3] * x)
-  
-  #Log likelihood computation.
-  
-  
-  cat("iteration: ", it, "log likelihood: ", llik[it], "\n")
-  flush.console()
-  # Stop if the log likelihood has not changed significantly
-  # Your code here
-  
-  #M-step: ML parameter estimation from the data and weights
-  # Your code here
-  
 }
 
 pi
 mu
 plot(llik[1:it], type="o")
+
 ```
