@@ -1,6 +1,6 @@
 ---
-title: "lab2_Hugo"
-author: "Hugo"
+title: "lab2"
+author: "Hugo Morvan & Marijn Jaarsma & Simon Jorstedt "
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
