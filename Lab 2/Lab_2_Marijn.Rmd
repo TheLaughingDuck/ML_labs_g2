@@ -1,7 +1,25 @@
+---
+title: "Lab_2_Marijn"
+author: "Marijn Jaarsma"
+date: "2023-11-24"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(tree)
 library(ggplot2)
 
-# 1.1
+```
+
+# Assignment 2: Decision trees and logistic regression for bank marketing
+## 2.1 
+Import the data to R, remove variable "duration" and divide into training/validation/test as 40/30/30: use data partitioning code specified in Lecture 2a.
+```{r 2.1}
+# 2.1
 # Read in data and remove 'duration' column
 df_bank <- read.csv("bank-full.csv", sep=";")
 df_bank <- df_bank[, names(df_bank) != "duration"]
@@ -25,7 +43,19 @@ df_valid <- df_bank[id_valid,]
 id_test <- setdiff(id_rest, id_valid)
 df_test <- df_bank[id_test,]
 
-# 1.2a
+```
+
+## 2.2 
+Fit decision trees to the training data so that you change the default settings one by one (i.e. not simultaneously):
+a. Decision Tree with default settings. 
+b. Decision Tree with smallest allowed node size equal to 7000.
+c. Decision trees minimum deviance to 0.0005.
+and report the misclassification rates for the training and validation data. 
+Which model is the best one among these three? Report how changing the 
+deviance and node size affected the size of the trees and explain why.
+
+```{r 2.2}
+# 2.2a
 n <- nrow(df_train)
 mod1 <- tree(y ~ ., data=df_train)
 pred_train1 <- predict(mod1, newdata=df_train, type="class")
@@ -33,10 +63,10 @@ pred_valid1 <- predict(mod1, newdata=df_valid, type="class")
 misclass_train1 <- (table(df_train$y, pred_train1)["no", "yes"] + table(df_train$y, pred_train1)["yes", "no"]) / nrow(df_train)
 misclass_valid1 <- (table(df_valid$y, pred_valid1)["no", "yes"] + table(df_valid$y, pred_valid1)["yes", "no"]) / nrow(df_valid)
 
-plot(mod1)
-text(mod1, pretty=0)
+# plot(mod1)
+# text(mod1, pretty=0)
 
-# 1.2b
+# 2.2b
 # https://search.r-project.org/CRAN/refmans/tree/html/tree.control.html
 mod2 <- tree(y ~ ., data=df_train, control=tree.control(nobs=n, minsize=7000))
 pred_train2 <- predict(mod2, newdata=df_train, type="class")
@@ -44,10 +74,10 @@ pred_valid2 <- predict(mod2, newdata=df_valid, type="class")
 misclass_train2 <- (table(df_train$y, pred_train2)["no", "yes"] + table(df_train$y, pred_train2)["yes", "no"]) / nrow(df_train)
 misclass_valid2 <- (table(df_valid$y, pred_valid2)["no", "yes"] + table(df_valid$y, pred_valid2)["yes", "no"]) / nrow(df_valid)
 
-plot(mod2)
-text(mod2, pretty=0)
+# plot(mod2)
+# text(mod2, pretty=0)
 
-# 1.2c
+# 2.2c
 # https://search.r-project.org/CRAN/refmans/tree/html/tree.control.html
 mod3 <- tree(y ~ ., data=df_train, control=tree.control(nobs=n, mindev=0.0005))
 pred_train3 <- predict(mod3, newdata=df_train, type="class")
@@ -55,9 +85,10 @@ pred_valid3 <- predict(mod3, newdata=df_valid, type="class")
 misclass_train3 <- (table(df_train$y, pred_train3)["no", "yes"] + table(df_train$y, pred_train3)["yes", "no"]) / nrow(df_train)
 misclass_valid3 <- (table(df_valid$y, pred_valid3)["no", "yes"] + table(df_valid$y, pred_valid3)["yes", "no"]) / nrow(df_valid)
 
-plot(mod3)
-text(mod3, pretty=0)
+# plot(mod3)
+# text(mod3, pretty=0)
 
+# Report values
 cat("Misclassification rate model a:\n", 
     "\tTrain: ", misclass_train1, "\n",
     "\tValidation: ", misclass_valid1, "\n\n",
@@ -69,6 +100,12 @@ cat("Misclassification rate model a:\n",
     "\tValidation: ", misclass_valid3,
     sep="")
 
+```
+
+## 2.3
+Use training and validation sets to choose the optimal tree depth in themodel 2c: study the trees up to 50 leaves. Present a graph of the dependence of deviances for the training and the validation data on the number of leaves and interpret this graph in terms of bias-variance tradeoff. Report the optimal amount of leaves and which variables seem to be most important for decision making in this tree. Interpret the information provided by the tree structure (not everything but most important findings).
+
+```{r 2.3}
 # 2.3
 train_score <- rep(0, 50)
 valid_score <- rep(0, 50)
@@ -85,6 +122,12 @@ plot(2:50, train_score[2:50], type="b", col="red", ylim=c(8000, 12000), xlab="# 
 points(2:50, valid_score[2:50], type="b", col="blue")
 legend(x="topright", legend=c("Train", "Validation"), lty=c(1, 1), col=c("red", "blue"))
 
+```
+
+## 2.4
+Estimate the confusion matrix, accuracy and F1 score for the test data by using the optimal model from step 3. Comment whether the model has a good predictive power and which of the measures (accuracy or F1-score) should be preferred here.
+
+```{r 2.4}
 # 2.4
 pruned_mod <- prune.tree(mod3, best=19)
 pred_test <- predict(pruned_mod, newdata=df_test, type="class")
@@ -97,6 +140,17 @@ prec <- conf_mat["yes", "yes"] / (conf_mat["yes", "yes"] + conf_mat["no", "yes"]
 rec <- conf_mat["yes", "yes"] / (conf_mat["yes", "yes"] + conf_mat["yes", "no"])
 F1 <- (2 * prec * rec) / (prec + rec)
 
+```
+
+## 2.5
+Perform a decision tree classification of the test data with the following loss matrix,
+$$L=\begin{pmatrix}
+0 & 5\\
+1 & 0
+\end{pmatrix}$$
+and report the confusion matrix for the test data. Compare the results with the results from step 4 and discuss how the rates has changed and why.
+
+```{r 2.5}
 # 2.5
 loss_matrix <- matrix(c(0, 1, 5, 0), nrow=2, ncol=2)
 mod4 <- tree(y ~ ., data=df_train)
@@ -111,6 +165,15 @@ table(df_train$y, pred_train4)
 plot(opt_pruned_mod4)
 text(opt_pruned_mod4, pretty=0)
 
+```
+
+## 2.6
+Use the optimal tree and a logistic regression model to classify the test data by 
+using the following principle:
+$$\hat{Y}=yes if p(Y='yes'|X) > \pi, otherwise \hat{Y}=no$$
+where $pi=0.05, 0.1, 0.15, ..., 0.9, 0.95$. Compute the TPR and FPR values for the two models and plot the corresponding ROC curves. Conclusion? Why precision-recall curve could be a better option here?
+
+```{r 2.6}
 # 2.6
 v_pi <- seq(from=0.05, to=0.95, by=0.05)
 log_mod <- glm(y ~ ., family=binomial(link="logit"), data=df_train)
@@ -138,3 +201,5 @@ for (pi in v_pi) {
 
 plot(v_fpr_log, v_tpr_log, type="l")
 lines(c(0, 1), c(0, 1))
+
+```
