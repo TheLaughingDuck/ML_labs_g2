@@ -30,6 +30,7 @@ set.seed(12345)
 id=sample(1:n, floor(n*0.5))
 train=data[id,]
 test=data[-id,]
+
 ```
 
 ### 1.1
@@ -87,6 +88,7 @@ At log(lambda) = -0.3, there are only 3 features left, Hence we can choose $\lam
 # 1.4
 ridge <- glmnet(as.matrix(train[,1:100]), train$Fat, alpha = 0)
 plot(ridge, xvar = "lambda", label = TRUE)
+
 ```
 
 ### 1.5
@@ -104,6 +106,7 @@ Report the optimal $\lambda$ and how many variables were chosen in this model.
 The optimal $\lambda$ is 0.05744535 or log(lambda) = -2.86. 
 ```{r}
 coef(cv_lasso, s = "lambda.min")
+
 ```
 9 variables were chosen in this model.
 
