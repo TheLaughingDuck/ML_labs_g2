@@ -14,6 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # 2. Mixture Models
 
+## Defining true parameter values
+
 ```{r 2}
 set.seed(1234567890)
 
@@ -43,6 +45,8 @@ for(i in 1:n) {
 
 ```
 
+## Implementing EM algorithm
+
 ```{r}
 M=3 # number of clusters
 w <- matrix(nrow=n, ncol=M) # weights
@@ -60,11 +64,10 @@ pi
 mu
 
 for(it in 1:max_it) {
-  plot(mu[1,], type="o", col="blue", ylim=c(0,1))
-  points(mu[2,], type="o", col="red")
-  points(mu[3,], type="o", col="green")
-  #points(mu[4,], type="o", col="yellow")
-  Sys.sleep(0.5)
+  # plot(mu[1,], type="o", col="blue", ylim=c(0,1))
+  # points(mu[2,], type="o", col="red")
+  # points(mu[3,], type="o", col="green")
+  # # Sys.sleep(0.5)
   
   # E-step: Computation of the weights
   # Compute x given y=m probabilities
@@ -83,7 +86,7 @@ for(it in 1:max_it) {
   # Compute weights according to P(y=m|x) = P(x|y=m)P(y=m) / P(x)
   for (i in 1:n) {
     for (m in 1:M) {
-      w[i, m] <- bern[i, m] * pi[m] / sum(bern[i]) 
+      w[i, m] <- bern[i, m] / sum(bern[i,]) 
     }
   }
   
@@ -95,7 +98,7 @@ for(it in 1:max_it) {
   # Stop if the log likelihood has not changed significantly
   # Your code here
   if (length(llik[llik != 0]) >= 2) {
-    if (llik[it] - llik[it - 1] < 1e-5) {
+    if (abs(llik[it] - llik[it - 1]) < min_change) {
       break
     }
   }
@@ -104,13 +107,337 @@ for(it in 1:max_it) {
   # Compute new pi and mu from weights
   pi <- 1 / n * colSums(w)
   
-  mu[1,] <- 1 / sum(w[, 1]) * colSums(w[, 1] * x)
-  mu[2,] <- 1 / sum(w[, 2]) * colSums(w[, 2] * x)
-  mu[3,] <- 1 / sum(w[, 3]) * colSums(w[, 3] * x)
+  for (m in 1:M) {
+    mu[m,] <- 1 / sum(w[, m]) * colSums(w[, m] * x)
+  }
 }
 
 pi
 mu
+
+plot(mu[1,], type="o", col="blue", ylim=c(0,1))
+points(mu[2,], type="o", col="red")
+points(mu[3,], type="o", col="green")
+
 plot(llik[1:it], type="o")
 
 ```
+
+## Testing for different/'wrong' values of M
+
+### M = 1
+
+```{r echo=FALSE}
+M=1 # number of clusters
+w <- matrix(nrow=n, ncol=M) # weights
+pi <- vector(length = M) # mixing coefficients
+mu <- matrix(nrow=M, ncol=D) # conditional distributions
+llik <- vector(length = max_it) # log likelihood of the EM iterations
+
+# Random initialization of the parameters
+pi <- runif(M,0.49,0.51)
+pi <- pi / sum(pi)
+for(m in 1:M) {
+  mu[m,] <- runif(D,0.49,0.51)
+}
+pi
+mu
+
+for(it in 1:max_it) {
+  # plot(mu[1,], type="o", col="blue", ylim=c(0,1))
+  # points(mu[2,], type="o", col="red")
+  # points(mu[3,], type="o", col="green")
+  # # Sys.sleep(0.5)
+  
+  # E-step: Computation of the weights
+  # Compute x given y=m probabilities
+  bern <- matrix(nrow=n, ncol=M)
+  for (i in 1:n) {
+    for (m in 1:M) {
+      v_bern <- vector()
+      for (d in 1:D) {
+          bern_im <- mu[m, d] ^ x[i, d] * (1 - mu[m, d]) ^ (1 - x[i, d])  
+          v_bern <- append(v_bern, bern_im)
+      }
+      bern[i, m] <- pi[m] * prod(v_bern)
+    }
+  }
+  
+  # Compute weights according to P(y=m|x) = P(x|y=m)P(y=m) / P(x)
+  for (i in 1:n) {
+    for (m in 1:M) {
+      w[i, m] <- bern[i, m] / sum(bern[i,]) 
+    }
+  }
+  
+  #Log likelihood computation.
+  llik[it] <- sum(log(rowSums(bern)))
+  
+  # cat("iteration: ", it, "log likelihood: ", llik[it], "\n")
+  flush.console()
+  # Stop if the log likelihood has not changed significantly
+  # Your code here
+  if (length(llik[llik != 0]) >= 2) {
+    if (abs(llik[it] - llik[it - 1]) < min_change) {
+      break
+    }
+  }
+  
+  #M-step: ML parameter estimation from the data and weights
+  # Compute new pi and mu from weights
+  pi <- 1 / n * colSums(w)
+  
+  for (m in 1:M) {
+    mu[m,] <- 1 / sum(w[, m]) * colSums(w[, m] * x)
+  }
+}
+
+pi
+mu
+
+plot(mu[1,], type="o", col="blue", ylim=c(0,1))
+# points(mu[2,], type="o", col="red")
+# points(mu[3,], type="o", col="green")
+# points(mu[4,], type="o", col="orange")
+
+plot(llik[1:it], type="o")
+
+```
+
+### M = 2
+
+```{r echo=FALSE}
+M=2 # number of clusters
+w <- matrix(nrow=n, ncol=M) # weights
+pi <- vector(length = M) # mixing coefficients
+mu <- matrix(nrow=M, ncol=D) # conditional distributions
+llik <- vector(length = max_it) # log likelihood of the EM iterations
+
+# Random initialization of the parameters
+pi <- runif(M,0.49,0.51)
+pi <- pi / sum(pi)
+for(m in 1:M) {
+  mu[m,] <- runif(D,0.49,0.51)
+}
+pi
+mu
+
+for(it in 1:max_it) {
+  # plot(mu[1,], type="o", col="blue", ylim=c(0,1))
+  # points(mu[2,], type="o", col="red")
+  # points(mu[3,], type="o", col="green")
+  # # Sys.sleep(0.5)
+  
+  # E-step: Computation of the weights
+  # Compute x given y=m probabilities
+  bern <- matrix(nrow=n, ncol=M)
+  for (i in 1:n) {
+    for (m in 1:M) {
+      v_bern <- vector()
+      for (d in 1:D) {
+          bern_im <- mu[m, d] ^ x[i, d] * (1 - mu[m, d]) ^ (1 - x[i, d])  
+          v_bern <- append(v_bern, bern_im)
+      }
+      bern[i, m] <- pi[m] * prod(v_bern)
+    }
+  }
+  
+  # Compute weights according to P(y=m|x) = P(x|y=m)P(y=m) / P(x)
+  for (i in 1:n) {
+    for (m in 1:M) {
+      w[i, m] <- bern[i, m] / sum(bern[i,]) 
+    }
+  }
+  
+  #Log likelihood computation.
+  llik[it] <- sum(log(rowSums(bern)))
+  
+  # cat("iteration: ", it, "log likelihood: ", llik[it], "\n")
+  flush.console()
+  # Stop if the log likelihood has not changed significantly
+  # Your code here
+  if (length(llik[llik != 0]) >= 2) {
+    if (abs(llik[it] - llik[it - 1]) < min_change) {
+      break
+    }
+  }
+  
+  #M-step: ML parameter estimation from the data and weights
+  # Compute new pi and mu from weights
+  pi <- 1 / n * colSums(w)
+  
+  for (m in 1:M) {
+    mu[m,] <- 1 / sum(w[, m]) * colSums(w[, m] * x)
+  }
+}
+
+pi
+mu
+
+plot(mu[1,], type="o", col="blue", ylim=c(0,1))
+points(mu[2,], type="o", col="red")
+
+plot(llik[1:it], type="o")
+
+```
+
+### M = 4
+
+```{r echo=FALSE}
+M=4 # number of clusters
+w <- matrix(nrow=n, ncol=M) # weights
+pi <- vector(length = M) # mixing coefficients
+mu <- matrix(nrow=M, ncol=D) # conditional distributions
+llik <- vector(length = max_it) # log likelihood of the EM iterations
+
+# Random initialization of the parameters
+pi <- runif(M,0.49,0.51)
+pi <- pi / sum(pi)
+for(m in 1:M) {
+  mu[m,] <- runif(D,0.49,0.51)
+}
+pi
+mu
+
+for(it in 1:max_it) {
+  # plot(mu[1,], type="o", col="blue", ylim=c(0,1))
+  # points(mu[2,], type="o", col="red")
+  # points(mu[3,], type="o", col="green")
+  # # Sys.sleep(0.5)
+  
+  # E-step: Computation of the weights
+  # Compute x given y=m probabilities
+  bern <- matrix(nrow=n, ncol=M)
+  for (i in 1:n) {
+    for (m in 1:M) {
+      v_bern <- vector()
+      for (d in 1:D) {
+          bern_im <- mu[m, d] ^ x[i, d] * (1 - mu[m, d]) ^ (1 - x[i, d])  
+          v_bern <- append(v_bern, bern_im)
+      }
+      bern[i, m] <- pi[m] * prod(v_bern)
+    }
+  }
+  
+  # Compute weights according to P(y=m|x) = P(x|y=m)P(y=m) / P(x)
+  for (i in 1:n) {
+    for (m in 1:M) {
+      w[i, m] <- bern[i, m] / sum(bern[i,]) 
+    }
+  }
+  
+  #Log likelihood computation.
+  llik[it] <- sum(log(rowSums(bern)))
+  
+  # cat("iteration: ", it, "log likelihood: ", llik[it], "\n")
+  flush.console()
+  # Stop if the log likelihood has not changed significantly
+  # Your code here
+  if (length(llik[llik != 0]) >= 2) {
+    if (abs(llik[it] - llik[it - 1]) < min_change) {
+      break
+    }
+  }
+  
+  #M-step: ML parameter estimation from the data and weights
+  # Compute new pi and mu from weights
+  pi <- 1 / n * colSums(w)
+  
+  for (m in 1:M) {
+    mu[m,] <- 1 / sum(w[, m]) * colSums(w[, m] * x)
+  }
+}
+
+pi
+mu
+
+plot(mu[1,], type="o", col="blue", ylim=c(0,1))
+points(mu[2,], type="o", col="red")
+points(mu[3,], type="o", col="green")
+points(mu[4,], type="o", col="orange")
+
+plot(llik[1:it], type="o")
+
+```
+
+### M = 5
+
+```{r echo=FALSE}
+M=5 # number of clusters
+w <- matrix(nrow=n, ncol=M) # weights
+pi <- vector(length = M) # mixing coefficients
+mu <- matrix(nrow=M, ncol=D) # conditional distributions
+llik <- vector(length = max_it) # log likelihood of the EM iterations
+
+# Random initialization of the parameters
+pi <- runif(M,0.49,0.51)
+pi <- pi / sum(pi)
+for(m in 1:M) {
+  mu[m,] <- runif(D,0.49,0.51)
+}
+pi
+mu
+
+for(it in 1:max_it) {
+  # plot(mu[1,], type="o", col="blue", ylim=c(0,1))
+  # points(mu[2,], type="o", col="red")
+  # points(mu[3,], type="o", col="green")
+  # # Sys.sleep(0.5)
+  
+  # E-step: Computation of the weights
+  # Compute x given y=m probabilities
+  bern <- matrix(nrow=n, ncol=M)
+  for (i in 1:n) {
+    for (m in 1:M) {
+      v_bern <- vector()
+      for (d in 1:D) {
+          bern_im <- mu[m, d] ^ x[i, d] * (1 - mu[m, d]) ^ (1 - x[i, d])  
+          v_bern <- append(v_bern, bern_im)
+      }
+      bern[i, m] <- pi[m] * prod(v_bern)
+    }
+  }
+  
+  # Compute weights according to P(y=m|x) = P(x|y=m)P(y=m) / P(x)
+  for (i in 1:n) {
+    for (m in 1:M) {
+      w[i, m] <- bern[i, m] / sum(bern[i,]) 
+    }
+  }
+  
+  #Log likelihood computation.
+  llik[it] <- sum(log(rowSums(bern)))
+  
+  # cat("iteration: ", it, "log likelihood: ", llik[it], "\n")
+  flush.console()
+  # Stop if the log likelihood has not changed significantly
+  # Your code here
+  if (length(llik[llik != 0]) >= 2) {
+    if (abs(llik[it] - llik[it - 1]) < min_change) {
+      break
+    }
+  }
+  
+  #M-step: ML parameter estimation from the data and weights
+  # Compute new pi and mu from weights
+  pi <- 1 / n * colSums(w)
+  
+  for (m in 1:M) {
+    mu[m,] <- 1 / sum(w[, m]) * colSums(w[, m] * x)
+  }
+}
+
+pi
+mu
+
+plot(mu[1,], type="o", col="blue", ylim=c(0,1))
+points(mu[2,], type="o", col="red")
+points(mu[3,], type="o", col="green")
+points(mu[4,], type="o", col="orange")
+points(mu[5,], type="o", col="purple")
+
+plot(llik[1:it], type="o")
+
+```
+
+## Analysis
