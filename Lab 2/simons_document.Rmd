@@ -21,64 +21,45 @@ crime_df <- read.csv("communities.csv")
 ## Assignment 3.1
 We are given some crime data. From analysing it using PCA, we find that the first component (PC1) explains $98.574$% of the variance, and the second component (PC2) explains $0.396$% of the variance in the data. As such, only one component is needed to capture at least $95$% of the variance in the data.
 
-```{r, echo=F, eval=F}
-# Assignment 3.1
-
-X <- crime_df %>%
-  select(-"ViolentCrimesPerPop") %>%
-  scale()
-
-S <- (1/nrow(X)) * t(X) %*% X
-
-# Find eigenvalues and vectors
-eigen(S)
-
-result <- prcomp(crime_df)
-lambda <- result$sdev^2
-lambda
-
-sprintf("%2.3f",lambda/sum(lambda)*100)
-screeplot(result)
-
-```
-
 ```{r}
 # Assignment 3.1
 
-scaler <- crime_df %>%
+# Establish a scaler for the entire dataset
+scaler_crime1 <- crime_df %>%
   select(-"ViolentCrimesPerPop") %>%
   preProcess()
 
+# Rescale the entire dataset and create X_crime
 X_crime <- crime_df %>%
   select(-"ViolentCrimesPerPop") %>%
-  predict(scaler, .) %>%
+  predict(scaler_crime1, .) %>%
   as.matrix()
 
+# Compute sample covariance matrix for X_crime
 S_crime <- (1/nrow(X_crime)) * t(X_crime) %*% X_crime
 
-# Calculate eigenvalues
+# Calculate eigenvalues for the sample covariance matrix
 U_crime <- eigen(S_crime)
 
-# Calculate loadings, or scores, for PC1 and PC2
-Z_crime_2 <- X_crime %*% U_crime$vectors[,c(1,2)]
+# Calculate the percentage of variance explained by each PC
+var_explained <- (100*U_crime$values / sum(U_crime$values)) %>%
+  round(digits = 3)
 
-# Calculate approximate original data
-X_crime_approx <- Z_crime_2 %*% solve(U_crime$vectors[,c(1,2)]) + scaler$mean
+cat("Variance explained by PC1:", var_explained[1] %>% sum(), "%\n")
 
-variance_crime_PC12 <- X_crime - Z_crime_2
+cat("Variance explained by PC2:", var_explained[2] %>% sum(), "%\n")
 
-
-# Check if the inverse of U_crime is the same as the transpose
-#all.equal(t(U_crime$vectors), solve(U_crime$vectors))
+# 35 PC's needed to achieve at least 95% variance explained
+cat("Variance explained by first 35 PC's:",
+    var_explained[1:35] %>% sum(), "%\n")
 ```
 
 
 ## Assignment 3.2
-
 ```{r}
 # Assignment 3.2
 
-PCA_2 <- princomp(crime_df)
+PCA_2 <- princomp(crime_df %>% select(-"ViolentCrimesPerPop"))
 
 # U contains the PC loadings
 # The eigenvectors basically (columnwise)
@@ -229,4 +210,21 @@ Z_iris_2 <- X_iris %*% U_iris$vectors[,c(1,2)]
 # Plot new coordinates
 plot(Z_iris_2)
 ```
+
+# Old code
+
+```{r}
+# -V- NOT REQUIRED -V-
+
+# Calculate loadings, or scores, for PC1 and PC2
+#Z_crime_2 <- X_crime %*% U_crime$vectors[,c(1,2)]
+
+#plot(Z_crime_2)
+
+# Calculate approximate original data
+#X_crime_approx <- Z_crime_2 %*% t(U_crime$vectors[,c(1,2)]) + scaler$mean
+
+# -^- NOT REQUIRED -^-
+```
+
 
