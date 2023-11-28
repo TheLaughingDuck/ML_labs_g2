@@ -21,7 +21,7 @@ crime_df <- read.csv("communities.csv")
 ## Assignment 3.1
 We are given some crime data. From analysing it using PCA, we find that the first component (PC1) explains $98.574$% of the variance, and the second component (PC2) explains $0.396$% of the variance in the data. As such, only one component is needed to capture at least $95$% of the variance in the data.
 
-```{r, echo=F}
+```{r, echo=F, eval=F}
 # Assignment 3.1
 
 X <- crime_df %>%
@@ -41,6 +41,37 @@ sprintf("%2.3f",lambda/sum(lambda)*100)
 screeplot(result)
 
 ```
+
+```{r}
+# Assignment 3.1
+
+scaler <- crime_df %>%
+  select(-"ViolentCrimesPerPop") %>%
+  preProcess()
+
+X_crime <- crime_df %>%
+  select(-"ViolentCrimesPerPop") %>%
+  predict(scaler, .) %>%
+  as.matrix()
+
+S_crime <- (1/nrow(X_crime)) * t(X_crime) %*% X_crime
+
+# Calculate eigenvalues
+U_crime <- eigen(S_crime)
+
+# Calculate loadings, or scores, for PC1 and PC2
+Z_crime_2 <- X_crime %*% U_crime$vectors[,c(1,2)]
+
+# Calculate approximate original data
+X_crime_approx <- Z_crime_2 %*% solve(U_crime$vectors[,c(1,2)]) + scaler$mean
+
+variance_crime_PC12 <- X_crime - Z_crime_2
+
+
+# Check if the inverse of U_crime is the same as the transpose
+#all.equal(t(U_crime$vectors), solve(U_crime$vectors))
+```
+
 
 ## Assignment 3.2
 
@@ -172,3 +203,30 @@ points(train_errors[-c(1:500)], type="l", col="blue")
 
 # Questions
 What is the difference between `prcomp` and `princomp`? Why do we redo the PCA after we have already done it in 3.1?
+
+Why are all the diagonal elements equal in the sample covariance matrix? Because we first rescale the data before computing the sample covariance matrix. When we rescale the data, it is done such that every column (variable) gets mean 0, and variance 1.
+
+
+
+# PCA MATH TESTING
+
+```{r}
+X_iris <- iris[,-5] %>% scale() # Drop Species col
+
+# Calculate sample covariance matrix
+S_iris <- 1/nrow(X_iris) * t(X_iris) %*% X_iris # Possibly divide by nrow(X_iris)-1
+
+U_iris <- eigen(S_iris)
+
+# Control calculation for the Eigenvalues (It worked!)
+#S_iris %*% U_iris$vectors[,1]
+#U_iris$values[1] * U_iris$vectors[,1]
+
+# Calculate the new coordinates of the observations when using PC1 and PC2
+# Also called scores
+Z_iris_2 <- X_iris %*% U_iris$vectors[,c(1,2)]
+
+# Plot new coordinates
+plot(Z_iris_2)
+```
+
