@@ -102,8 +102,14 @@ cat("Misclassification rate model a:\n",
 
 ```
 
+Model a and b are incredibly close to each other in performance. Both of their validation errors are better than model c, but since model b has one set of terminal nodes less than model a this model is less complex and thus the better option between the two. 
+
+Setting the minimal node size to 7000 in model b means resulted in the pruning of one branch. The split that occurred here would have resulted in a node with less than 7000 observations, which was not allowed with this option.
+
+The default minimum deviance is 0.01 (\url{https://cran.r-project.org/web/packages/tree/tree.pdf}). Setting the minimum deviance at a much smaller number (0.0005) means that more branches are allowed and results in a much bigger tree. 
+
 ## 2.3
-Use training and validation sets to choose the optimal tree depth in themodel 2c: study the trees up to 50 leaves. Present a graph of the dependence of deviances for the training and the validation data on the number of leaves and interpret this graph in terms of bias-variance tradeoff. Report the optimal amount of leaves and which variables seem to be most important for decision making in this tree. Interpret the information provided by the tree structure (not everything but most important findings).
+Use training and validation sets to choose the optimal tree depth in the model 2c: study the trees up to 50 leaves. Present a graph of the dependence of deviances for the training and the validation data on the number of leaves and interpret this graph in terms of bias-variance tradeoff. Report the optimal amount of leaves and which variables seem to be most important for decision making in this tree. Interpret the information provided by the tree structure (not everything but most important findings).
 
 ```{r 2.3}
 # 2.3
@@ -129,7 +135,9 @@ Estimate the confusion matrix, accuracy and F1 score for the test data by using 
 
 ```{r 2.4}
 # 2.4
-pruned_mod <- prune.tree(mod3, best=19)
+# Find number of leaves with minimum validation score
+best_k <- match(min(valid_score[2:length(valid_score)]), valid_score)
+pruned_mod <- prune.tree(mod3, best=best_k)
 pred_test <- predict(pruned_mod, newdata=df_test, type="class")
 
 # Confusion matrix
@@ -140,7 +148,15 @@ prec <- conf_mat["yes", "yes"] / (conf_mat["yes", "yes"] + conf_mat["no", "yes"]
 rec <- conf_mat["yes", "yes"] / (conf_mat["yes", "yes"] + conf_mat["yes", "no"])
 F1 <- (2 * prec * rec) / (prec + rec)
 
+cat("Number of leaves: ", best_k, "\n",
+    "Accuracy: ", round(acc, 3), "\n",
+    "F1: ", round(F1, 3), "\n\n",
+    "Confusion matrix:\n",
+    sep="")
+conf_mat
 ```
+
+The model is quite good at prediction "no", but bad at prediction "yes". There are much fewer "yes" values in the data (1585 versus 11979 "no"), but the model predicts many false negatives (1371 out of 1585). The accuracy measure would suggest this model performs very well, but if we really care about correctly predicting "yes" values the F1 measure would be a better measure to consider. This takes into account precision and recall, so it works better on an imbalanced dataset. The F1 score for this model is quite low (0.225), suggesting that it is bad at accurately predicting positive values. This can also be seen from the confusion matrix. If we do not care much about accurately predicting "yes" values, we can accept the accuracy rate as a good measure, but considering the imbalanced nature of the data, F1 would be preferred.
 
 ## 2.5
 Perform a decision tree classification of the test data with the following loss matrix,
@@ -155,7 +171,6 @@ and report the confusion matrix for the test data. Compare the results with the 
 loss_matrix <- matrix(c(0, 1, 5, 0), nrow=2, ncol=2)
 mod4 <- tree(y ~ ., data=df_train)
 pruned_mod4 <- prune.tree(mod4, loss=loss_matrix)
-plot(pruned_mod4)
 
 # k=6 optimal
 opt_pruned_mod4 <- prune.tree(mod4, k=6, loss=loss_matrix)
@@ -170,7 +185,7 @@ text(opt_pruned_mod4, pretty=0)
 ## 2.6
 Use the optimal tree and a logistic regression model to classify the test data by 
 using the following principle:
-$$\hat{Y}=yes if p(Y='yes'|X) > \pi, otherwise \hat{Y}=no$$
+$$\hat{Y}=yes\ if\ p(Y='yes'|X) > \pi,\ otherwise\ \hat{Y}=no$$
 where $pi=0.05, 0.1, 0.15, ..., 0.9, 0.95$. Compute the TPR and FPR values for the two models and plot the corresponding ROC curves. Conclusion? Why precision-recall curve could be a better option here?
 
 ```{r 2.6}
