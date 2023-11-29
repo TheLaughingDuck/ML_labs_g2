@@ -243,7 +243,7 @@ cat("Overall variance for 100 trees:", var(meR100), "\n")
 The mean error rate decreases as the number of trees in the random forest grows. This is because as the number of tree increases, the "wisdom of crowd" effect intensifies
 
 – The third dataset represents a slightly more complicated classification problem than the first one. Still, you should get better performance for it when using sufficient trees in the random forest. Explain why you get better performance.
-We still get better performances because of the wisdom of crowd effect still. 
+We still get better performances because as the number of trees increases, we reduce the chances of overfitting by having many different trees that ignores the random variation in the training data and also reduces the variance of the ensemble model. 
 
 
 
