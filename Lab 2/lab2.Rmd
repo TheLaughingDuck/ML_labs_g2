@@ -13,7 +13,12 @@ knitr::opts_chunk$set(echo = TRUE)
 library(glmnet)
 library(ggplot2)
 ```
+## Statement of Contribution:
 
+* Assignment 1 was coded and analysed by Hugo
+* Assignment 2 was coded and analysed by 
+* Assignment 3 was coded and analysed by
+All code and questions were analysed and discussed together.
 
 ## Assignment 1. Explicit regularization
 
