@@ -17,17 +17,17 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r libraries, echo=FALSE, message=FALSE, warning=FALSE}
 library(randomForest)
 ```
+
 ## Statement of Contribution:
 
-* Assignment 1 was coded and analysed by Simon and Hugo
-* Assignment 2 was coded and analysed by Marijn
-All code and questions were analysed and discussed together.
+-   Assignment 1 was coded and analysed by Simon and Hugo
+-   Assignment 2 was coded and analysed by Marijn All code and questions were analysed and discussed together.
 
 # 1. Ensemble Methods
 
-Your task is to learn some random forests using the function randomForest from the R package randomForest. The training data is produced by running the following R code:
+Your task is to learn some random forests using the function randomForest from the R package randomForest.
 
-```{r}
+```{r 1.train}
 x1<-runif(100)
 x2<-runif(100)
 trdata<-cbind(x1,x2)
@@ -35,9 +35,9 @@ y<-as.numeric(x1<x2)
 trlabels<-as.factor(y)
 ```
 
-The task is therefore classifying Y from X1 and X2 , where Y is binary and X1 and X2 continuous. You should learn a random forest with 1, 10 and 100 trees, which you can do by setting the argument ntree to the appropriate value. Use nodesize = 25 and keep.forest = TRUE. The latter saves the random forest learned. You need it because you should also compute the misclassification error in the following test dataset (use the function predict for this purpose):
+The task is therefore classifying $Y$ from $X_1$ and $X_2$ , where $Y$ is binary and $X_1$ and $X_2$ continuous. You should learn a random forest with 1, 10 and 100 trees, which you can do by setting the argument n`tree` to the appropriate value. Use `nodesize = 25` and `keep.forest = TRUE`. The latter saves the random forest learned. You need it because you should also compute the misclassification error in the following test dataset (use the function `predict` for this purpose):
 
-```{r}
+```{r 1.1}
 set.seed(1234)
 x1<-runif(1000)
 x2<-runif(1000)
@@ -73,9 +73,9 @@ cat("Mean misclassification error for 100 trees:", get_misc_err(conf_mat100), "\
 
 ```
 
-● Repeat the procedure above for 1000 training datasets of size 100 and report the mean and variance of the misclassification errors. In other words, create 1000 training datasets of size 100, learn a random forest from each dataset, and compute the misclassification error in the same test dataset of size 1000. Report results for when the random forest has 1, 10 and 100 trees.
+Repeat the procedure above for 1000 training datasets of size 100 and report the mean and variance of the misclassification errors. In other words, create 1000 training datasets of size 100, learn a random forest from each dataset, and compute the misclassification error in the same test dataset of size 1000. Report results for when the random forest has 1, 10 and 100 trees.
 
-```{r}
+```{r 1.2}
 get_training <- function(){
   x1<-runif(100)
   x2<-runif(100)
@@ -125,9 +125,9 @@ cat("Overall variance for 100 trees:", var(meR100), "\n")
 
 ```
 
-Repeat the exercise above but this time use the condition (x1<0.5) instead of (x1<x2) when producing the training and test datasets.
+Repeat the exercise above but this time use the condition `(x1<0.5)` instead of `(x1<x2)` when producing the training and test datasets.
 
-```{r}
+```{r 1.3}
 set.seed(1234)
 x1<-runif(1000)
 x2<-runif(1000)
@@ -180,9 +180,9 @@ cat("Overall mean for 100 trees:", mean(meR100), "\n")
 cat("Overall variance for 100 trees:", var(meR100), "\n")
 ```
 
-Repeat the exercise above but this time use the condition ((x1<0.5 & x2<0.5) | (x1>0.5 & x2>0.5)) instead of (x1<x2) when producing the training and test datasets. Unlike above, use nodesize = 12 for this exercise.
+Repeat the exercise above but this time use the condition `((x1<0.5 & x2<0.5) | (x1>0.5 & x2>0.5))` instead of `(x1<x2)` when producing the training and test datasets. Unlike above, use nodesize = 12 for this exercise.
 
-```{r}
+```{r 1.4}
 set.seed(1234)
 x1<-runif(1000)
 x2<-runif(1000)
@@ -237,26 +237,25 @@ cat("Overall variance for 100 trees:", var(meR100), "\n")
 ```
 
 Answer the following questions:
-– What happens with the mean error rate when the number of trees in the random forest grows? Why?
+
+-- What happens with the mean error rate when the number of trees in the random forest grows? Why?
+
 The mean error rate decreases as the number of trees in the random forest grows. This is because as the number of tree increases, the "wisdom of crowd" effect intensifies
 
-– The third dataset represents a slightly more complicated classification problem than the first one. Still, you should get better performance for it when using sufficient trees in the random forest. Explain why you get better performance.
-We still get better performances because as the number of trees increases, we reduce the chances of overfitting by having many different trees that ignores the random variation in the training data and also reduces the variance of the ensemble model. 
+-- The third dataset represents a slightly more complicated classification problem than the first one. Still, you should get better performance for it when using sufficient trees in the random forest. Explain why you get better performance.
 
-
+We still get better performances because as the number of trees increases, we reduce the chances of overfitting by having many different trees that ignores the random variation in the training data and also reduces the variance of the ensemble model.
 
 # 2. Mixture Models
 
-Your task is to implement the EM algorithm for Bernoulli mixture model. Please use the R template below to solve the assignment. Then, use your implementation to show what happens when your mixture model has too few and too many clusters, i.e. set M = 2, 3, 4 and compare results. Please provide a short explanation as well.
-A Bernoulli mixture model is $$p(x) = \sum_{m=1}^{M}{\pi_m Bern(x|\mu_m)}$$
-where $x = (x_1,...,x_D)$ is a D-dimensional binary random vector, $\pi_m = p(y = m)$ and $$Bern(x|\mu_m) = \prod_{d=1}^{D}{\mu_{m,d}^{x_d}(1-\mu_{m,d})^{(1-x_d)} }$$
+Your task is to implement the EM algorithm for Bernoulli mixture model. Please use the R template below to solve the assignment. Then, use your implementation to show what happens when your mixture model has too few and too many clusters, i.e. set M = 2, 3, 4 and compare results. Please provide a short explanation as well. A Bernoulli mixture model is $$p(x) = \sum_{m=1}^{M}{\pi_m Bern(x|\mu_m)}$$ where $x = (x_1,...,x_D)$ is a D-dimensional binary random vector, $\pi_m = p(y = m)$ and $$Bern(x|\mu_m) = \prod_{d=1}^{D}{\mu_{m,d}^{x_d}(1-\mu_{m,d})^{(1-x_d)} }$$
 
 where $\mu_m = (\mu_{m,1} , . . . , \mu_{m,D} )$ is a D-dimensional vector of probabilities. As usual, the log likelihood of the dataset $\begin{Bmatrix}x_i\end{Bmatrix}_{i=1}^{n}$ is $$\sum_{i=1}^{M}\log p(x_i)$$
 
 Finally, in the EM algorithm, the parameter updates for the Bernoulli mixture model are the same as for the Gaussian mixture model (see Equations 10.16a,b in the lecture slides).
 
-# 2. Mixture Models
 ## Defining true parameter values
+
 ```{r 2}
 set.seed(1234567890)
 
@@ -287,6 +286,7 @@ for(i in 1:n) {
 ```
 
 ## Implementing EM algorithm
+
 ```{r}
 M=3 # number of clusters
 w <- matrix(nrow=n, ncol=M) # weights
@@ -364,7 +364,9 @@ plot(llik[1:it], type="o")
 ```
 
 ## Testing for different/'wrong' values of M
+
 ### M = 1
+
 ```{r echo=FALSE}
 M=1 # number of clusters
 w <- matrix(nrow=n, ncol=M) # weights
@@ -443,6 +445,7 @@ plot(llik[1:it], type="o")
 ```
 
 ### M = 2
+
 ```{r echo=FALSE}
 M=2 # number of clusters
 w <- matrix(nrow=n, ncol=M) # weights
@@ -519,6 +522,7 @@ plot(llik[1:it], type="o")
 ```
 
 ### M = 4
+
 ```{r echo=FALSE}
 M=4 # number of clusters
 w <- matrix(nrow=n, ncol=M) # weights
@@ -597,6 +601,7 @@ plot(llik[1:it], type="o")
 ```
 
 ### M = 5
+
 ```{r echo=FALSE}
 M=5 # number of clusters
 w <- matrix(nrow=n, ncol=M) # weights
@@ -677,12 +682,13 @@ plot(llik[1:it], type="o")
 
 ## Analysis
 
-* Having too few clusters will make it approach the mean of the true distributions for each dimension.
+-   Having too few clusters will make it approach the mean of the true distributions for each dimension.
 
-* Having too many clusters will do the same thing, but with redundancy (overlapping curves).
+-   Having too many clusters will do the same thing, but with redundancy (overlapping curves).
 
-* Investigate M = 6 to confirm overlapping, and how pi and mu values change with this.
+-   Investigate M = 6 to confirm overlapping, and how pi and mu values change with this.
 
 # Appendix
+
 ```{r appendix, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
 ```
