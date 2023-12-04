@@ -11,17 +11,21 @@ output: pdf_document
 ## Setup
 
 ```{r}
+# Setup
+
 library(magrittr)
 library(dplyr)
 library(caret)
+library(ggplot2)
 
 crime_df <- read.csv("communities.csv")
+
 ```
 
 ## Assignment 3.1
-We are given some crime data. From analysing it using PCA, we find that the first component (PC1) explains $98.574$% of the variance, and the second component (PC2) explains $0.396$% of the variance in the data. As such, only one component is needed to capture at least $95$% of the variance in the data.
+We are given some crime data. After excluding the response variable ViolentCrimesPerPop we analyse it using PCA, and find that the first component (PC1) explains about $25.017$ % of the variance, and the second component (PC2) explains about $16.936$ % of the variance in the data. To achieve $95$ % variance explained, the first 35 principal components must be used.
 
-```{r}
+```{r, echo=F}
 # Assignment 3.1
 
 # Establish a scaler for the entire dataset
@@ -52,28 +56,47 @@ cat("Variance explained by PC2:", var_explained[2] %>% sum(), "%\n")
 # 35 PC's needed to achieve at least 95% variance explained
 cat("Variance explained by first 35 PC's:",
     var_explained[1:35] %>% sum(), "%\n")
+
 ```
 
-
 ## Assignment 3.2
-```{r}
+Now we repeat the PCA performed in Assignment 3.1 using prebuilt R functionality. We find that the contributions to PC1 are fairly well spread across the variables, and the five with largest (absolute) contribution are very close in their contribution. There is clearly underlying dependencies among these variables. Median family income and median income are of course highly correlated. The other variables are also likely highly explanatory for income and wealth in general.
+
+```{r, echo=F, out.width="70%", fig.align='center'}
 # Assignment 3.2
 
-PCA_2 <- princomp(crime_df %>% select(-"ViolentCrimesPerPop"))
+PCA_2 <- princomp(crime_df %>% select(-"ViolentCrimesPerPop") %>% scale())
 
 # U contains the PC loadings
 # The eigenvectors basically (columnwise)
 U <- PCA_2$loadings
 
+# Plot a trace plot for
 plot(U[,1], main="Fig 3.2. Traceplot, PC1")
-```
 
-In Figure 3.2 we see that the first feature of PC1 (state) carries by far the most explanatory power. The four following ones are population, household size, raceb, racew. These features might be related to each other.
+largest_contributors <- U[,1] %>% abs() %>% sort(decreasing = T) %>% names()
+cat("Five largest contributors to PC1 are:\n")
+cat(largest_contributors[1:5], sep = "\n")
+
+```
 
 Next, in Figure 3.3 we plot the PC scores of PC1 and PC2, and map the color of points to the Violent Crimes per Population feature.
 
-```{r}
-plot(U[,1], U[,2], main="Fig 3.3. PC Scores")
+```{r, echo=F, out.width="70%", fig.align='center'}
+# Assignment 3.2
+
+Z_crime_2 <- X_crime %*% U_crime$vectors[,c(1,2)] %>%
+  as.data.frame() %>%
+  cbind(ViolentCrimesPerPop = crime_df$ViolentCrimesPerPop) %>%
+  cbind(testcolor = c(1:1994))
+
+ggplot(data = Z_crime_2,
+       aes(x = Z_crime_2[,1],
+           y = Z_crime_2[,2],
+           col = ViolentCrimesPerPop))
+  geom_point() +
+  ggtitle("Fig 3.3. Loadings")
+
 ```
 
 ## Assignment 3.3
@@ -91,6 +114,8 @@ test=crime_df[-id,]
 ```
 
 ```{r}
+# Assignment 3.3
+
 # Establish Scaling
 scaling <- train %>% preProcess()
 
@@ -112,6 +137,7 @@ test_mse <- mean((test$ViolentCrimesPerPop - test_pred)^2)
 
 cat("Train mse:", train_mse, "\n")
 cat("Test mse:", test_mse, "\n")
+
 ```
 
 ## Assignment 3.4
