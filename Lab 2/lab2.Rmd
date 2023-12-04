@@ -16,8 +16,8 @@ library(ggplot2)
 ## Statement of Contribution:
 
 * Assignment 1 was coded and analysed by Hugo
-* Assignment 2 was coded and analysed by 
-* Assignment 3 was coded and analysed by
+* Assignment 2 was coded and analysed by Marijn
+* Assignment 3 was coded and analysed by Simon
 All code and questions were analysed and discussed together.
 
 ## Assignment 1. Explicit regularization

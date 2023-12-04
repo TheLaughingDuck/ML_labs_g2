@@ -100,6 +100,7 @@ ggplot(data = Z_crime_2,
 ```
 
 ## Assignment 3.3
+Now we wish to attempt to construct a linear prediction model. First we split the available data into train and test groups (50/50). The Mean Squared Error for train and test data is reported below. There is a significant jump from the train to the test error, which indicates that the model might be overfitting the data.
 
 ```{r, echo=F}
 # Assignment 3.3
@@ -111,10 +112,6 @@ id=sample(1:n, floor(n*0.5))
 train=crime_df[id,]
 test=crime_df[-id,]
 
-```
-
-```{r}
-# Assignment 3.3
 
 # Establish Scaling
 scaling <- train %>% preProcess()
@@ -141,10 +138,14 @@ cat("Test mse:", test_mse, "\n")
 ```
 
 ## Assignment 3.4
+Now we will instead use prebuilt R functionality to try to optimise our model. We run the `optim` function and plot the resulting train and test (validation) errors against the iteration index in Figure 3.4. The optimisation quickly achieves a roughly optimal solution, and spends many iterations making small, unnecessary adjustments. We find an appropriate stopping place where the test (validation) error is minimal.
+
+It should be noted that the test data has been inappropriately used in Assignment 3.3 and 3.4, as per the explicit lab instructions. It has essentially been used as validation data. Instead, test data should be reserved and used only in the end to evaluate our final model.
 
 ```{r}
 ## Assignment 3.4
 
+# Set up data environment
 train_noresponse <- train[,-which(names(train) == "ViolentCrimesPerPop")]
 y_true_train <- train[,which(names(train) == "ViolentCrimesPerPop")]
 
@@ -153,7 +154,6 @@ y_true_test <- test[,which(names(test) == "ViolentCrimesPerPop")]
 
 train_errors <- c()
 test_errors <- c()
-test_prints <- c(3)
 
 # cost function
 # data should NOT contain the response variable
@@ -173,84 +173,24 @@ cost_linreg <- function(theta){
   return(train_cost)
 }
 
+# Attempt to optimise our model
 optim_object <- optim(rep(0, 100), method="BFGS", fn = cost_linreg, control = list(trace=T))
 
-cat(test_prints, "\n")
-```
-
-
-```{r}
-# Iterate and stuff
-# theta <- rep(0, 100)
-# train_errors <- c()
-# test_errors <- c()
-# for(i in 1:1000){
-#   cat(i, " ")
-#   optim_object <- optim(theta, method="BFGS", fn = cost_linreg)
-#   
-#   # Compute and store train error
-#   train_prediction <- as.matrix(train_noresponse) %*% optim_object$par
-#   train_errors <- c(train_errors, mean((train_prediction - y_true)^2))
-#   
-#   # Compute and store test error
-#   test_noresponse <- test[,-which(names(test) == "ViolentCrimesPerPop")]
-#   test_prediction <- as.matrix(test_noresponse) %*% optim_object$par
-#   test_errors <- c(test_errors, mean((test_prediction - y_true)^2))
-#   
-#   # Update theta
-#   theta <- optim_object$par
-# }
-
-ylim <- c(min(train_errors[-c(1:500)], test_errors[-c(1:500)]), max(train_errors[-c(1:500)], test_errors[-c(1:500)]))
-plot(test_errors[-c(1:500)], type="l", col="red", ylim = ylim)
+# Plot train and test (validation) errors
+#ylim <- c(min(train_errors[-c(1:500)], test_errors[-c(1:500)]), max(train_errors[-c(1:500)], test_errors[-c(1:500)]))
+plot(test_errors[-c(1:500)], type="l", col="red", ylim = ylim,
+     main = "Fig 3.4. Train and validation errors across iterations",
+     xlab = "Iteration index",
+     ylab = "Test (validation) errors")
 points(train_errors[-c(1:500)], type="l", col="blue")
-```
 
+# Find the iteration number where the validation error is the lowest
+optimal_iteration <- which(test_errors[-c(1:500)] == min(test_errors[-c(1:500)]))
 
+# Print the resulting and train and test (validation) errors
+cat("Train mse:", train_errors[optimal_iteration], "\n")
+cat("Test mse:", test_errors[optimal_iteration], "\n")
 
-# Questions
-What is the difference between `prcomp` and `princomp`? Why do we redo the PCA after we have already done it in 3.1?
-
-Why are all the diagonal elements equal in the sample covariance matrix? Because we first rescale the data before computing the sample covariance matrix. When we rescale the data, it is done such that every column (variable) gets mean 0, and variance 1.
-
-
-
-# PCA MATH TESTING
-
-```{r}
-X_iris <- iris[,-5] %>% scale() # Drop Species col
-
-# Calculate sample covariance matrix
-S_iris <- 1/nrow(X_iris) * t(X_iris) %*% X_iris # Possibly divide by nrow(X_iris)-1
-
-U_iris <- eigen(S_iris)
-
-# Control calculation for the Eigenvalues (It worked!)
-#S_iris %*% U_iris$vectors[,1]
-#U_iris$values[1] * U_iris$vectors[,1]
-
-# Calculate the new coordinates of the observations when using PC1 and PC2
-# Also called scores
-Z_iris_2 <- X_iris %*% U_iris$vectors[,c(1,2)]
-
-# Plot new coordinates
-plot(Z_iris_2)
-```
-
-# Old code
-
-```{r}
-# -V- NOT REQUIRED -V-
-
-# Calculate loadings, or scores, for PC1 and PC2
-#Z_crime_2 <- X_crime %*% U_crime$vectors[,c(1,2)]
-
-#plot(Z_crime_2)
-
-# Calculate approximate original data
-#X_crime_approx <- Z_crime_2 %*% t(U_crime$vectors[,c(1,2)]) + scaler$mean
-
-# -^- NOT REQUIRED -^-
 ```
 
 
