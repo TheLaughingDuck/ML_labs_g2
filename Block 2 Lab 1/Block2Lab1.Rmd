@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r libraries, echo=FALSE, message=FALSE, warning=FALSE}
 library(randomForest)
+
 ```
 
 # 1. Ensemble Methods
@@ -28,6 +29,7 @@ x2<-runif(100)
 trdata<-cbind(x1,x2)
 y<-as.numeric(x1<x2)
 trlabels<-as.factor(y)
+
 ```
 
 The task is therefore classifying Y from X1 and X2 , where Y is binary and X1 and X2 continuous. You should learn a random forest with 1, 10 and 100 trees, which you can do by setting the argument ntree to the appropriate value. Use nodesize = 25 and keep.forest = TRUE. The latter saves the random forest learned. You need it because you should also compute the misclassification error in the following test dataset (use the function predict for this purpose):
@@ -63,8 +65,6 @@ p100 <- predict(r100, tedata)
 conf_mat100 <- table(p100, telabels)
 get_misc_err(conf_mat100)
 cat("Mean misclassification error for 100 trees:", get_misc_err(conf_mat100), "\n")
-
-
 
 ```
 
@@ -177,6 +177,7 @@ cat("Overall mean for 10 trees:", mean(meR10), "\n")
 cat("Overall variance for 10 trees:", var(meR10), "\n")
 cat("Overall mean for 100 trees:", mean(meR100), "\n")
 cat("Overall variance for 100 trees:", var(meR100), "\n")
+
 ```
 
 ● Repeat the exercise above but this time use the condition ((x1<0.5 & x2<0.5) | (x1>0.5 & x2>0.5)) instead of (x1<x2) when producing the training and test datasets. Unlike above, use nodesize = 12 for this exercise.
@@ -236,6 +237,7 @@ cat("Overall mean for 10 trees:", mean(meR10), "\n")
 cat("Overall variance for 10 trees:", var(meR10), "\n")
 cat("Overall mean for 100 trees:", mean(meR100), "\n")
 cat("Overall variance for 100 trees:", var(meR100), "\n")
+
 ```
 
 ● Answer the following questions:
@@ -678,12 +680,7 @@ plot(llik[1:it], type="o")
 ```
 
 ## Analysis
-
-* Having too few clusters will make it approach the mean of the true distributions for each dimension.
-
-* Having too many clusters will do the same thing, but with redundancy (overlapping curves).
-
-* Investigate M = 6 to confirm overlapping, and how pi and mu values change with this.
+When too few clusters are specified, the one or two clusters will attempt to approach the mean of the true distributions. If there is only one cluster, it will be centered around 0.5 for all dimensions, and only clusters will look similar to the two true clusters whose values go up and down but are centered around 0.5. When too many clusters are specified, the same thing will occur, but there may be redundancy. For the case of four clusters, The central $\mu=0.5$ for all D cluster is (roughly) replaced by two clusters centering around these values. In the case of five clusters, we observe that some clusters pick up the exact same mean values in some dimensions. There is a lot of overlapping here, because the clusters are picking up points in the same regions that should rather only be one cluster.
 
 # Appendix
 ```{r appendix, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
