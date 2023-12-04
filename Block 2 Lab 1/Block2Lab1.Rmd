@@ -49,19 +49,19 @@ get_misc_err <- function(conf_mat){
 r1 <- randomForest(trdata, trlabels, ntree = 1, nodesize = 25, keep.forest = TRUE)
 p1 <- predict(r1, tedata)
 conf_mat1 <- table(p1, telabels)
-get_misc_err(conf_mat1)
+#get_misc_err(conf_mat1)
 cat("Mean misclassification error for 1 tree:", get_misc_err(conf_mat1), "\n")
 
 r10 <- randomForest(trdata, trlabels, ntree = 10, nodesize = 25, keep.forest = TRUE)
 p10 <- predict(r10, tedata)
 conf_mat10 <- table(p10, telabels)
-get_misc_err(conf_mat10)
+#get_misc_err(conf_mat10)
 cat("Mean misclassification error for 10 trees:", get_misc_err(conf_mat10), "\n")
 
 r100 <- randomForest(trdata, trlabels, ntree = 100, nodesize = 25, keep.forest = TRUE)
 p100 <- predict(r100, tedata)
 conf_mat100 <- table(p100, telabels)
-get_misc_err(conf_mat100)
+#get_misc_err(conf_mat100)
 cat("Mean misclassification error for 100 trees:", get_misc_err(conf_mat100), "\n")
 
 
@@ -120,7 +120,7 @@ cat("Overall variance for 100 trees:", var(meR100), "\n")
 
 ```
 
-● Repeat the exercise above but this time use the condition (x1<0.5) instead of (x1<x2) when producing the training and test datasets.
+Repeat the exercise above but this time use the condition (x1<0.5) instead of (x1<x2) when producing the training and test datasets.
 
 ```{r}
 set.seed(1234)
@@ -140,19 +140,15 @@ get_training <- function(){
   return(list(trdata, trlabels))
 }
 meR1 <- c()
-
 meR10 <- c()
-
 meR100 <- c()
 
 for(i in 1:1000){
-  
   cat("Iteration:", i, "\r")
   #Creating the training data
   training <- get_training()
   trdata <- training[[1]]
   trlabels <- training[[2]]
-  
   
   r1 <- randomForest(trdata, trlabels, ntree = 1, nodesize = 25, keep.forest = TRUE)
   p1 <- predict(r1, tedata)
@@ -170,7 +166,7 @@ for(i in 1:1000){
   meR100 <- c(meR100, get_misc_err(conf_mat100))
 }
 
-#Overall mean
+#Overall means and variances
 cat("Overall mean for 1 tree:", mean(meR1), "\n")
 cat("Overall variance for 1 tree:", var(meR1), "\n")
 cat("Overall mean for 10 trees:", mean(meR10), "\n")
@@ -179,7 +175,7 @@ cat("Overall mean for 100 trees:", mean(meR100), "\n")
 cat("Overall variance for 100 trees:", var(meR100), "\n")
 ```
 
-● Repeat the exercise above but this time use the condition ((x1<0.5 & x2<0.5) | (x1>0.5 & x2>0.5)) instead of (x1<x2) when producing the training and test datasets. Unlike above, use nodesize = 12 for this exercise.
+Repeat the exercise above but this time use the condition ((x1<0.5 & x2<0.5) | (x1>0.5 & x2>0.5)) instead of (x1<x2) when producing the training and test datasets. Unlike above, use nodesize = 12 for this exercise.
 
 ```{r}
 set.seed(1234)
@@ -199,13 +195,10 @@ get_training <- function(){
   return(list(trdata, trlabels))
 }
 meR1 <- c()
-
 meR10 <- c()
-
 meR100 <- c()
 
 for(i in 1:1000){
-  
   cat("Iteration:", i, "\r")
   #Creating the training data
   training <- get_training()
@@ -238,7 +231,7 @@ cat("Overall mean for 100 trees:", mean(meR100), "\n")
 cat("Overall variance for 100 trees:", var(meR100), "\n")
 ```
 
-● Answer the following questions:
+Answer the following questions:
 – What happens with the mean error rate when the number of trees in the random forest grows? Why?
 The mean error rate decreases as the number of trees in the random forest grows. This is because as the number of tree increases, the "wisdom of crowd" effect intensifies
 
