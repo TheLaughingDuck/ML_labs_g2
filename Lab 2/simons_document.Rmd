@@ -190,77 +190,7 @@ optimal_iteration <- which(test_errors[-c(1:500)] == min(test_errors[-c(1:500)])
 # Print the resulting and train and test (validation) errors
 cat("Train mse:", train_errors[optimal_iteration], "\n")
 cat("Test mse:", test_errors[optimal_iteration], "\n")
+
 ```
 
-
-
-# Questions
-What is the difference between `prcomp` and `princomp`? Why do we redo the PCA after we have already done it in 3.1?
-
-Why are all the diagonal elements equal in the sample covariance matrix? Because we first rescale the data before computing the sample covariance matrix. When we rescale the data, it is done such that every column (variable) gets mean 0, and variance 1.
-
-
-
-# PCA MATH TESTING
-
-```{r}
-X_iris <- iris[,-5] %>% scale() # Drop Species col
-
-# Calculate sample covariance matrix
-S_iris <- 1/nrow(X_iris) * t(X_iris) %*% X_iris # Possibly divide by nrow(X_iris)-1
-
-U_iris <- eigen(S_iris)
-
-# Control calculation for the Eigenvalues (It worked!)
-#S_iris %*% U_iris$vectors[,1]
-#U_iris$values[1] * U_iris$vectors[,1]
-
-# Calculate the new coordinates of the observations when using PC1 and PC2
-# Also called scores
-Z_iris_2 <- X_iris %*% U_iris$vectors[,c(1,2)]
-
-# Plot new coordinates
-plot(Z_iris_2)
-```
-
-# Old code
-
-```{r}
-# -V- NOT REQUIRED -V-
-
-# Calculate loadings, or scores, for PC1 and PC2
-#Z_crime_2 <- X_crime %*% U_crime$vectors[,c(1,2)]
-
-#plot(Z_crime_2)
-
-# Calculate approximate original data
-#X_crime_approx <- Z_crime_2 %*% t(U_crime$vectors[,c(1,2)]) + scaler$mean
-
-# -^- NOT REQUIRED -^-
-```
-
-
-# Old iterating for Assignment 3.4
-```{r}
-# Iterate and stuff
-# theta <- rep(0, 100)
-# train_errors <- c()
-# test_errors <- c()
-# for(i in 1:1000){
-#   cat(i, " ")
-#   optim_object <- optim(theta, method="BFGS", fn = cost_linreg)
-#   
-#   # Compute and store train error
-#   train_prediction <- as.matrix(train_noresponse) %*% optim_object$par
-#   train_errors <- c(train_errors, mean((train_prediction - y_true)^2))
-#   
-#   # Compute and store test error
-#   test_noresponse <- test[,-which(names(test) == "ViolentCrimesPerPop")]
-#   test_prediction <- as.matrix(test_noresponse) %*% optim_object$par
-#   test_errors <- c(test_errors, mean((test_prediction - y_true)^2))
-#   
-#   # Update theta
-#   theta <- optim_object$par
-# }
-```
 
