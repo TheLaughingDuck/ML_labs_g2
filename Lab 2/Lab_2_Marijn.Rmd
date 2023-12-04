@@ -3,6 +3,9 @@ title: "Lab_2_Marijn"
 author: "Marijn Jaarsma"
 date: "2023-11-24"
 output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: 80
 ---
 
 ```{r setup, include=FALSE}
@@ -11,16 +14,21 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(tree)
-library(ggplot2)
+library(rpart)
 
 ```
 
 # Assignment 2: Decision trees and logistic regression for bank marketing
-## 2.1 
-Import the data to R, remove variable "duration" and divide into training/validation/test as 40/30/30: use data partitioning code specified in Lecture 2a.
+
+## 2.1
+
+Import the data to R, remove variable "duration" and divide into
+training/validation/test as 40/30/30: use data partitioning code specified in
+Lecture 2a.
+
 ```{r 2.1}
 # 2.1
-# Read in data and remove 'duration' column
+# Read in data, remove 'duration' column, and add 1/0 bool column for y
 df_bank <- read.csv("bank-full.csv", sep=";")
 df_bank <- df_bank[, names(df_bank) != "duration"]
 
@@ -45,14 +53,15 @@ df_test <- df_bank[id_test,]
 
 ```
 
-## 2.2 
-Fit decision trees to the training data so that you change the default settings one by one (i.e. not simultaneously):
-a. Decision Tree with default settings. 
-b. Decision Tree with smallest allowed node size equal to 7000.
-c. Decision trees minimum deviance to 0.0005.
-and report the misclassification rates for the training and validation data. 
-Which model is the best one among these three? Report how changing the 
-deviance and node size affected the size of the trees and explain why.
+## 2.2
+
+Fit decision trees to the training data so that you change the default settings
+one by one (i.e. not simultaneously): a. Decision Tree with default settings. b.
+Decision Tree with smallest allowed node size equal to 7000. c. Decision trees
+minimum deviance to 0.0005. and report the misclassification rates for the
+training and validation data. Which model is the best one among these three?
+Report how changing the deviance and node size affected the size of the trees
+and explain why.
 
 ```{r 2.2}
 # 2.2a
@@ -102,14 +111,29 @@ cat("Misclassification rate model a:\n",
 
 ```
 
-Model a and b are incredibly close to each other in performance. Both of their validation errors are better than model c, but since model b has one set of terminal nodes less than model a this model is less complex and thus the better option between the two. 
+Model a and b are incredibly close to each other in performance. Both of their
+validation errors are better than model c, but since model b has one set of
+terminal nodes less than model a this model is less complex and thus the better
+option between the two.
 
-Setting the minimal node size to 7000 in model b means resulted in the pruning of one branch. The split that occurred here would have resulted in a node with less than 7000 observations, which was not allowed with this option.
+Setting the minimal node size to 7000 in model b means resulted in the pruning
+of one branch. The split that occurred here would have resulted in a node with
+less than 7000 observations, which was not allowed with this option.
 
-The default minimum deviance is 0.01 (\url{https://cran.r-project.org/web/packages/tree/tree.pdf}). Setting the minimum deviance at a much smaller number (0.0005) means that more branches are allowed and results in a much bigger tree. 
+The default minimum deviance is 0.01
+(https://cran.r-project.org/web/packages/tree/tree.pdf). Setting the
+minimum deviance at a much smaller number (0.0005) means that more branches are
+allowed and results in a much bigger tree.
 
 ## 2.3
-Use training and validation sets to choose the optimal tree depth in the model 2c: study the trees up to 50 leaves. Present a graph of the dependence of deviances for the training and the validation data on the number of leaves and interpret this graph in terms of bias-variance tradeoff. Report the optimal amount of leaves and which variables seem to be most important for decision making in this tree. Interpret the information provided by the tree structure (not everything but most important findings).
+
+Use training and validation sets to choose the optimal tree depth in the model
+2c: study the trees up to 50 leaves. Present a graph of the dependence of
+deviances for the training and the validation data on the number of leaves and
+interpret this graph in terms of bias-variance tradeoff. Report the optimal
+amount of leaves and which variables seem to be most important for decision
+making in this tree. Interpret the information provided by the tree structure
+(not everything but most important findings).
 
 ```{r 2.3}
 # 2.3
@@ -121,17 +145,33 @@ for (i in 2:50) {
   pred <- predict(pruned_tree, newdata=df_valid, type="tree")
   train_score[i] <- deviance(pruned_tree)
   valid_score[i] <- deviance(pred)
+
+  # plot(pruned_tree)
+  # text(pruned_tree, pretty=0)
+  # title(paste0("k=", i))
 }
 
 # https://r-coder.com/add-legend-r/
 plot(2:50, train_score[2:50], type="b", col="red", ylim=c(8000, 12000), xlab="# leaves", ylab="Deviance")
 points(2:50, valid_score[2:50], type="b", col="blue")
 legend(x="topright", legend=c("Train", "Validation"), lty=c(1, 1), col=c("red", "blue"))
+title(paste0("Opt. # leaves: ", match(min(valid_score[2:50]), valid_score)))
+
+opt_pruned_tree <- prune.tree(mod3, best=22)
+plot(opt_pruned_tree)
+text(opt_pruned_tree, pretty=0)
 
 ```
 
+The number of leaves that produces the lowest deviance on the validation set is 22. Interestingly, the deviance on the training data is higher than that on the validation data for all values of k. If k goes beyond 50, they get closer to each other, but validation will always remain lower. Though it should also be tested on the training data, this at least means the model is not overfitting. The poutcome variable is the first split, after which pdays is used for a split followed by entrepeneur. On the left side of the tree, where most decisions lead to "no", poutcome is followed by month, contact, month again, and pdays to lead to a yes decision. As the tree gets bigger it becomes difficult to read the overlapping text, but month seems to be an important variable that comes back often, and pdays a variable that leads to a split between "yes" and "no". 
+
+## TALK ABOUT BIAS-VARIANCE TRADE-OFF
+
 ## 2.4
-Estimate the confusion matrix, accuracy and F1 score for the test data by using the optimal model from step 3. Comment whether the model has a good predictive power and which of the measures (accuracy or F1-score) should be preferred here.
+
+Estimate the confusion matrix, accuracy and F1 score for the test data by using
+the optimal model from step 3. Comment whether the model has a good predictive
+power and which of the measures (accuracy or F1-score) should be preferred here.
 
 ```{r 2.4}
 # 2.4
@@ -143,78 +183,110 @@ pred_test <- predict(pruned_mod, newdata=df_test, type="class")
 # Confusion matrix
 # https://datascience.stackexchange.com/questions/27132/decision-tree-used-for-calculating-precision-accuracy-and-recall-class-breakd
 conf_mat <- table(df_test$y, pred_test, dnn=c("True", "Pred"))
-acc <- (conf_mat["yes", "yes"] + conf_mat["no", "no"]) / sum(conf_mat)
-prec <- conf_mat["yes", "yes"] / (conf_mat["yes", "yes"] + conf_mat["no", "yes"])
-rec <- conf_mat["yes", "yes"] / (conf_mat["yes", "yes"] + conf_mat["yes", "no"])
-F1 <- (2 * prec * rec) / (prec + rec)
 
-cat("Number of leaves: ", best_k, "\n",
-    "Accuracy: ", round(acc, 3), "\n",
-    "F1: ", round(F1, 3), "\n\n",
-    "Confusion matrix:\n",
-    sep="")
-conf_mat
+fun_scoring <- function(conf_mat) {
+  acc <- (conf_mat["yes", "yes"] + conf_mat["no", "no"]) / sum(conf_mat)
+  prec <- conf_mat["yes", "yes"] / (conf_mat["yes", "yes"] + conf_mat["no", "yes"])
+  rec <- conf_mat["yes", "yes"] / (conf_mat["yes", "yes"] + conf_mat["yes", "no"])
+  F1 <- (2 * prec * rec) / (prec + rec)
+  
+  cat("Number of leaves: ", best_k, "\n",
+      "Accuracy: ", round(acc, 3), "\n",
+      "F1: ", round(F1, 3), "\n\n",
+      "Confusion matrix:\n",
+      sep="")
+  conf_mat
+}
+
+fun_scoring(conf_mat)
+
 ```
 
-The model is quite good at prediction "no", but bad at prediction "yes". There are much fewer "yes" values in the data (1585 versus 11979 "no"), but the model predicts many false negatives (1371 out of 1585). The accuracy measure would suggest this model performs very well, but if we really care about correctly predicting "yes" values the F1 measure would be a better measure to consider. This takes into account precision and recall, so it works better on an imbalanced dataset. The F1 score for this model is quite low (0.225), suggesting that it is bad at accurately predicting positive values. This can also be seen from the confusion matrix. If we do not care much about accurately predicting "yes" values, we can accept the accuracy rate as a good measure, but considering the imbalanced nature of the data, F1 would be preferred.
+The model is quite good at prediction "no", but bad at prediction "yes". There
+are much fewer "yes" values in the data (1585 versus 11979 "no"), but the model
+predicts many false negatives (1371 out of 1585). The accuracy measure would
+suggest this model performs very well, but if we really care about correctly
+predicting "yes" values the F1 measure would be a better measure to consider.
+This takes into account precision and recall, so it works better on an
+imbalanced dataset. The F1 score for this model is quite low (0.225), suggesting
+that it is bad at accurately predicting positive values. This can also be seen
+from the confusion matrix. If we do not care much about accurately predicting
+"yes" values, we can accept the accuracy rate as a good measure, but considering
+the imbalanced nature of the data, F1 would be preferred.
 
 ## 2.5
-Perform a decision tree classification of the test data with the following loss matrix,
-$$L=\begin{pmatrix}
+
+Perform a decision tree classification of the test data with the following loss
+matrix, $$L=\begin{pmatrix}
 0 & 5\\
 1 & 0
-\end{pmatrix}$$
-and report the confusion matrix for the test data. Compare the results with the results from step 4 and discuss how the rates has changed and why.
+\end{pmatrix}$$ and report the confusion matrix for the test data. Compare the
+results with the results from step 4 and discuss how the rates has changed and
+why.
 
 ```{r 2.5}
 # 2.5
-loss_matrix <- matrix(c(0, 1, 5, 0), nrow=2, ncol=2)
-mod4 <- tree(y ~ ., data=df_train)
-pruned_mod4 <- prune.tree(mod4, loss=loss_matrix)
-
-# k=6 optimal
-opt_pruned_mod4 <- prune.tree(mod4, k=6, loss=loss_matrix)
-pred_train4 <- predict(opt_pruned_mod4, newdata=df_train, type="class")
-
-table(df_train$y, pred_train4)
-plot(opt_pruned_mod4)
-text(opt_pruned_mod4, pretty=0)
+# Ordered differently according to the documentation
+# https://stackoverflow.com/questions/49646377/loss-matrix-in-rs-package-rpart
+loss_matrix <- matrix(c(0, 5, 1, 0), nrow=2, ncol=2)
+mod4 <- rpart(y ~ ., data=df_train, method="class", parms=list(loss=loss_matrix))
+pred_test4 <- predict(mod4, newdata=df_test, type="class")
+conf_mat <- table(df_test$y, pred_test4, dnn=c("True", "Pred"))
+fun_scoring(conf_mat)
 
 ```
 
+Using the loss matrix, the true positive rate has gone up, along with the false positive rate. The false negative rate has gone down slightly, but is still not very good compared to the true positive rate. As we are penalizing false negative rate by five times what we are penalizing false positives with, the model is now much more likely to predict "yes". In combination with the unbalanced nature of the data, this has led to a highly increase false positive rate, rather than a better true positive rate.
+
 ## 2.6
-Use the optimal tree and a logistic regression model to classify the test data by 
-using the following principle:
-$$\hat{Y}=yes\ if\ p(Y='yes'|X) > \pi,\ otherwise\ \hat{Y}=no$$
-where $pi=0.05, 0.1, 0.15, ..., 0.9, 0.95$. Compute the TPR and FPR values for the two models and plot the corresponding ROC curves. Conclusion? Why precision-recall curve could be a better option here?
+
+Use the optimal tree and a logistic regression model to classify the test data
+by using the following principle:
+$$\hat{Y}=yes\ if\ p(Y='yes'|X) > \pi,\ otherwise\ \hat{Y}=no$$ where
+$pi=0.05, 0.1, 0.15, ..., 0.9, 0.95$. Compute the TPR and FPR values for the two
+models and plot the corresponding ROC curves. Conclusion? Why precision-recall
+curve could be a better option here?
 
 ```{r 2.6}
 # 2.6
 v_pi <- seq(from=0.05, to=0.95, by=0.05)
 log_mod <- glm(y ~ ., family=binomial(link="logit"), data=df_train)
 pred_log_prob <- predict(log_mod, newdata=df_train, type="response")
-pred_tree_prob <- predict(mod2, newdata=df_train, type="prob")
+pred_tree_prob <- predict(mod4, newdata=df_train, type="prob")
 
-v_tpr_log <- vector()
 v_fpr_log <- vector()
+v_tpr_log <- vector()
+v_fpr_tree <- vector()
+v_tpr_tree <- vector()
 for (pi in v_pi) {
-  pred_log_v <- ifelse(pred_log_prob > pi, "yes", "no")
-  conf_mat_log <- table(df_train$y, pred_log_v)
+  pred_log <- ifelse(pred_log_prob > pi, "yes", "no")
+  pred_tree <- ifelse(pred_tree_prob[, "yes"] > pi, "yes", "no")
   
-  if (!("yes" %in% colnames(conf_mat_log))) {
-    tpr_log <- 0
-    fpr_log <- 0
-  }
-  else {
-    tpr_log <- conf_mat_log["yes", "yes"] / sum(conf_mat_log)
-    fpr_log <- conf_mat_log["no", "yes"] / sum(conf_mat_log)
-  }
+  fp_log <- length(pred_log[(pred_log == "yes") & (df_train$y == "no")])
+  fn_log <- length(pred_log[(pred_log == "no") & (df_train$y == "yes")])
+  tp_log <- length(pred_log[(pred_log == "yes") & (df_train$y == "yes")])
+  tn_log <- length(pred_log[(pred_log == "no") & (df_train$y == "no")])
+  v_fpr_log <- append(v_fpr_log, fp_log / (fp_log + tn_log))
+  v_tpr_log <- append(v_tpr_log, tp_log / (tp_log + fn_log))
   
-  v_tpr_log <- append(v_tpr_log, tpr_log)
-  v_fpr_log <- append(v_fpr_log, fpr_log)
+  fp_tree <- length(pred_tree[(pred_tree == "yes") & (df_train$y == "no")])
+  fn_tree <- length(pred_tree[(pred_tree == "no") & (df_train$y == "yes")])
+  tp_tree <- length(pred_tree[(pred_tree == "yes") & (df_train$y == "yes")])
+  tn_tree <- length(pred_tree[(pred_tree == "no") & (df_train$y == "no")])
+  v_fpr_tree <- append(v_fpr_tree, fp_tree / (fp_tree + tn_tree))
+  v_tpr_tree <- append(v_tpr_tree, tp_tree / (tp_tree + fn_tree))
 }
 
-plot(v_fpr_log, v_tpr_log, type="l")
+# Plot ROC logistic regression
+plot(v_fpr_log, v_tpr_log, type="l", xlim=c(0, 1), ylim=c(0, 1))
 lines(c(0, 1), c(0, 1))
+title("ROC Logistic Regression")
+
+# Plot ROC decision tree
+plot(v_fpr_tree, v_tpr_tree, type="l", xlim=c(0, 1), ylim=c(0, 1))
+lines(c(0, 1), c(0, 1))
+title("ROC Decision Tree")
 
 ```
+
+Looking purely at the ROC curves, it seems that the logistic regression performs slightly better than the decision tree. However, considering the unbalanced nature of the data, it might be better to consider a precision-recall curve. 
