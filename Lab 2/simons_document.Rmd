@@ -80,7 +80,7 @@ cat(largest_contributors[1:5], sep = "\n")
 
 ```
 
-Next, in Figure 3.3 we plot the PC scores of PC1 and PC2, and map the color of points to the Violent Crimes per Population feature.
+Next, in Figure 3.3 we plot the data expressed by the vectors PC1 and PC2, and map the color of points to the Violent Crimes per Population feature. The result 
 
 ```{r, echo=F, out.width="70%", fig.align='center'}
 # Assignment 3.2
@@ -93,11 +93,16 @@ Z_crime_2 <- X_crime %*% U_crime$vectors[,c(1,2)] %>%
 ggplot(data = Z_crime_2,
        aes(x = Z_crime_2[,1],
            y = Z_crime_2[,2],
-           col = ViolentCrimesPerPop))
+           col = ViolentCrimesPerPop)) +
+  scale_color_gradient(low = "lightblue", high = "black") +
   geom_point() +
-  ggtitle("Fig 3.3. Loadings")
+  ggtitle("Fig 3.3. Data expressed in PC1 and PC2") +
+  xlab("PC1 value") +
+  ylab("PC2 value")
 
 ```
+
+The result indicates first of all that most observations have a low value for the crime variable. There is a very large high-density region around the point $(0,0)$ (by design). This cluster extends roughly such that PC1 and PC2 seem to be negatively correlated. For low values of PC2 (roughly below -5), there is however a less dense and moderatly sized group of datapoints where the average crime variable tends to have larger values. However these datapoints with higher crime rates appear to be fairly uniformly spread across the range of PC2. The component PC1 appears to be suboptimal in predicting density, but a significantly large number of datapoints with high crime rates have negative PC1 values, compared to among the datapoints with positive PC1 values. Thus PC1 may be useful for predicting crime rate.
 
 ## Assignment 3.3
 
