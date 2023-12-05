@@ -77,7 +77,7 @@ The cost function that should be optimized is the following:
 $$\hat{\theta}^{lasso} = argmin\{\frac{1}n \sum_{i=1}^{n}(y_i-\theta_0-\theta_{1}x_{1i}-...-\theta_px_{pi})^2+\lambda\sum_{j=1}^{p}|\theta_j|\}$$
 
 ### 1.3
-3. Fit the LASSO regression model to the training data. Present a plot illustrating how the regression coefficients depend on the log of penalty factor (log λ) and interpret this plot. 
+3. Fit the LASSO regression model to the training data. Present a plot illustrating how the regression coefficients depend on the log of penalty factor (log lambda) and interpret this plot. 
 
 ```{r 1.3}
 # 1.3
@@ -88,7 +88,9 @@ abline(v = -0.3, col = "red")
 
 ```
 Interpret this plot: the higher the penalty factor, the more coefficients are set to zero.
+
 What value of the penalty factor can be chosen if we want to select a model with only three features?
+
 At log(lambda) = -0.3, there are only 3 non-zero features left, Hence we can choose $\lambda = e^{-0.3} = 0.74$.
 
 ### 1.4
@@ -101,6 +103,7 @@ plot(ridge, xvar = "lambda", label = TRUE)
 
 ```
 The higher the penalty factor, the smaller the coefficients. The coefficients are never set to zero, unlike in the LASSO regression.
+
 ### 1.5
 
  5. Use cross-validation with default number of folds to compute the optimal LASSO model. Present a plot showing the dependence of the CV score on $\log\lambda$ and comment how the CV score changes with $\log\lambda$. 
@@ -113,6 +116,7 @@ best_lambda <- cv_lasso$lambda.min
 cat("best lambda:", best_lambda, "\n")
 ```
 Report the optimal $\lambda$ and how many variables were chosen in this model. 
+
 The optimal $\lambda$ is 0.05744535 or log(lambda) = -2.86. 
 ```{r}
 coef(cv_lasso, s = "lambda.min")
@@ -121,11 +125,9 @@ coef(cv_lasso, s = "lambda.min")
 9 variables were chosen in this model.
 
 
-Does the information displayed in the plot suggests that the optimal $\lambda$ value results in a statistically significantly better prediction than $\log\lambda = −4$ ? 
+Does the information displayed in the plot suggests that the optimal $\lambda$ value results in a statistically significantly better prediction than $\log\lambda = -4$ ? 
 
-*** check this ***
 The information displayed in the plot suggests that the optimal lambda has same prediction MSE as log(lambda) = -4.
-*** check this ***
 
 Finally, create a scatter plot of the original test versus predicted test values for the model corresponding to optimal lambda and comment whether the model predictions are good.
 
