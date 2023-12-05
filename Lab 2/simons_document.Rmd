@@ -10,7 +10,7 @@ output: pdf_document
 
 ## Setup
 
-```{r}
+```{r, message=F, warning=F}
 # Setup
 
 library(magrittr)
@@ -80,27 +80,31 @@ cat(largest_contributors[1:5], sep = "\n")
 
 ```
 
-Next, in Figure 3.3 we plot the PC scores of PC1 and PC2, and map the color of points to the Violent Crimes per Population feature.
+Next, in Figure 3.3 we plot the data expressed by the vectors PC1 and PC2, and map the color of points to the Violent Crimes per Population feature. The result indicates first of all that most observations have a low value for the crime variable. There is a very large high-density region around the point $(0,0)$ (by design). This cluster extends roughly such that PC1 and PC2 seem to be negatively correlated. For low values of PC2 (roughly below -5), there is however a less dense and moderatly sized group of datapoints where the average crime variable tends to have larger values. However these datapoints with higher crime rates appear to be fairly uniformly spread across the range of PC2. The component PC1 appears to be suboptimal in predicting density, but a significantly large number of datapoints with high crime rates have negative PC1 values, compared to among the datapoints with positive PC1 values. Thus PC1 may be useful for predicting crime rate.
 
-```{r, echo=F, out.width="70%", fig.align='center'}
+```{r Figure 3.3, echo=F, out.width="70%", fig.align='center'}
 # Assignment 3.2
 
+# Get the datapoints coordinates expressed in PC1 and PC2
 Z_crime_2 <- X_crime %*% U_crime$vectors[,c(1,2)] %>%
   as.data.frame() %>%
-  cbind(ViolentCrimesPerPop = crime_df$ViolentCrimesPerPop) %>%
-  cbind(testcolor = c(1:1994))
+  cbind(ViolentCrimesPerPop = crime_df$ViolentCrimesPerPop)
 
+# Plot data in terms of PC1 and PC2
 ggplot(data = Z_crime_2,
        aes(x = Z_crime_2[,1],
            y = Z_crime_2[,2],
-           col = ViolentCrimesPerPop))
+           col = ViolentCrimesPerPop)) +
+  scale_color_gradient(low = "lightyellow", high = "black") +
   geom_point() +
-  ggtitle("Fig 3.3. Loadings")
+  ggtitle("Fig 3.3. Crime data expressed in PC1 and PC2") +
+  xlab("PC1 value") +
+  ylab("PC2 value")
 
 ```
 
 ## Assignment 3.3
-Now we wish to attempt to construct a linear prediction model. First we split the available data into train and test groups (50/50). The Mean Squared Error for train and test data is reported below. There is a significant jump from the train to the test error, which indicates that the model might be overfitting the data.
+Now we wish to attempt to construct a linear prediction model. First we split the available data into train and test groups (50/50). The Mean Squared Error for train and test data is reported below. There is a difference between them, but it should be noted that the MSE highly depends on problem context, and so it is difficult to make any strong statements about the significance of the difference between the achieved train and test errors. However, the test error is roughly $50$ % larger than the train error, and this might indicate overfitting.
 
 ```{r, echo=F}
 # Assignment 3.3
@@ -138,11 +142,11 @@ cat("Test mse:", test_mse, "\n")
 ```
 
 ## Assignment 3.4
-Now we will instead use prebuilt R functionality to try to optimise our model. We run the `optim` function and plot the resulting train and test (validation) errors against the iteration index in Figure 3.4. The optimisation quickly achieves a roughly optimal solution, and spends many iterations making small, unnecessary adjustments. We find an appropriate stopping place where the test (validation) error is minimal.
+Now we will instead use prebuilt R functionality to try to optimise our model. We run the `optim` function and plot the resulting train and test (validation) errors against the iteration index in Figure 3.4. The optimisation quickly achieves a roughly optimal solution, and spends many iterations making small, unnecessary adjustments. We find an appropriate stopping place where the test (validation) error is minimal. When comparing the train and test errors at this point with the train and test error achieved in Assignment 3.3, we find that the train error has increased slightly (performing worse), while the test error has remained roughly the same (in fact it has decreased) so that accuracy is maintained. This indicates that the level of overfitting is lower in the new model, which is a generally desireable outcome.
 
 It should be noted that the test data has been inappropriately used in Assignment 3.3 and 3.4, as per the explicit lab instructions. It has essentially been used as validation data. Instead, test data should be reserved and used only in the end to evaluate our final model.
 
-```{r}
+```{r, echo=F}
 ## Assignment 3.4
 
 # Set up data environment
@@ -177,7 +181,7 @@ cost_linreg <- function(theta){
 optim_object <- optim(rep(0, 100), method="BFGS", fn = cost_linreg, control = list(trace=T))
 
 # Plot train and test (validation) errors
-#ylim <- c(min(train_errors[-c(1:500)], test_errors[-c(1:500)]), max(train_errors[-c(1:500)], test_errors[-c(1:500)]))
+ylim <- c(min(train_errors[-c(1:500)], test_errors[-c(1:500)]), max(train_errors[-c(1:500)], test_errors[-c(1:500)]))
 plot(test_errors[-c(1:500)], type="l", col="red", ylim = ylim,
      main = "Fig 3.4. Train and validation errors across iterations",
      xlab = "Iteration index",
