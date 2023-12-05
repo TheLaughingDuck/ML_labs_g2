@@ -165,7 +165,7 @@ text(opt_pruned_tree, pretty=0)
 
 The number of leaves that produces the lowest deviance on the validation set is 22. Interestingly, the deviance on the training data is higher than that on the validation data for all values of k. If k goes beyond 50, they get closer to each other, but validation will always remain lower. Though it should also be tested on the training data, this at least means the model is not overfitting. The poutcome variable is the first split, after which pdays is used for a split followed by entrepeneur. On the left side of the tree, where most decisions lead to "no", poutcome is followed by month, contact, month again, and pdays to lead to a yes decision. As the tree gets bigger it becomes difficult to read the overlapping text, but month seems to be an important variable that comes back often, and pdays a variable that leads to a split between "yes" and "no". 
 
-## TALK ABOUT BIAS-VARIANCE TRADE-OFF
+As the number of leaves on the tree increases, the bias of the model gets reduced. However, the variance also goes up as the deviance of the validation set increases with a more complex model, signaling overfitting. Purely aiming to improve the bias of the model, then, is not necessarily a good thing if this means the variance is not staying constant. Other methods, such as bagging or random forests, may be applied to improve one of these while keeping the other constant (or at least not increasing the other enough for an undesirable effect), but in the case of a simple decision tree such as we have here, the sweet spot is somewhere in the middle.
 
 ## 2.4
 
