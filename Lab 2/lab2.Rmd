@@ -602,3 +602,8 @@ cat("Test mse:", test_errors[optimal_iteration], "\n")
 
 ```
 
+
+
+# Appendix
+```{r appendix, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
