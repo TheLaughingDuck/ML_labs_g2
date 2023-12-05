@@ -22,16 +22,23 @@ library(rpart)
 
 ## Statement of Contribution:
 
-* Assignment 1 was coded and analysed by Hugo
-* Assignment 2 was coded and analysed by Marijn
-* Assignment 3 was coded and analysed by Simon
-All code and questions were analysed and discussed together.
+-   Assignment 1 was coded and analysed by Hugo
+-   Assignment 2 was coded and analysed by Marijn
+-   Assignment 3 was coded and analysed by Simon
+-   All code and questions were analysed and discussed together.
 
 ## Assignment 1. Explicit regularization
 
-The tecator.csv contains the results of study aimed to investigate whether a near infrared absorbance spectrum can be used to predict the fat content of samples of meat. For each meat sample the data consists of a 100 channel spectrum of absorbance records and the levels of moisture (water), fat and protein. The absorbance is -log10 of the transmittance measured by the spectrometer. The moisture, fat and protein are determined by analytic chemistry.
+The tecator.csv contains the results of study aimed to investigate whether a
+near infrared absorbance spectrum can be used to predict the fat content of
+samples of meat. For each meat sample the data consists of a 100 channel
+spectrum of absorbance records and the levels of moisture (water), fat and
+protein. The absorbance is -log10 of the transmittance measured by the
+spectrometer. The moisture, fat and protein are determined by analytic
+chemistry.
 
-Divide data randomly into train and test (50/50) by using the codes from the lectures.
+Divide data randomly into train and test (50/50) by using the codes from the
+lectures.
 
 ```{r data1}
 # 1.0
@@ -46,7 +53,12 @@ test=data[-id,]
 ```
 
 ### 1.1
-1. Assume that Fat can be modeled as a linear regression in which absorbance characteristics (Channels) are used as features. Report the underlying probabilistic model, fit the linear regression to the training data and estimate the training and test errors. Comment on the quality of fit and prediction and therefore on the quality of model.
+
+Assume that Fat can be modeled as a linear regression in which absorbance
+characteristics (Channels) are used as features. Report the underlying
+probabilistic model, fit the linear regression to the training data and estimate
+the training and test errors. Comment on the quality of fit and prediction and
+therefore on the quality of model.
 
 ```{r 1.1, warning=FALSE}
 # 1.1
@@ -68,16 +80,25 @@ test_error2 <- mean((test$Fat - fitted_test)^2)
 cat("test error (using fitted()):", test_error2, "\n")
 
 ```
-Test results are awful, is is probably overfitting. Also the dataset size is very small (215 observations) therefore test and train are both ~100 observations, which is barely more than the number of features (100).
+
+Test results are awful, is is probably overfitting. Also the dataset size is
+very small (215 observations) therefore test and train are both \~100
+observations, which is barely more than the number of features (100).
 
 ### 1.2
-2. Assume now that Fat can be modeled as a LASSO regression in which all Channels are used as features. Report the cost function that should be optimized in this scenario.
+
+Assume now that Fat can be modeled as a LASSO regression in which all Channels
+are used as features. Report the cost function that should be optimized in this
+scenario.
 
 The cost function that should be optimized is the following:
 $$\hat{\theta}^{lasso} = argmin\{\frac{1}n \sum_{i=1}^{n}(y_i-\theta_0-\theta_{1}x_{1i}-...-\theta_px_{pi})^2+\lambda\sum_{j=1}^{p}|\theta_j|\}$$
 
 ### 1.3
-3. Fit the LASSO regression model to the training data. Present a plot illustrating how the regression coefficients depend on the log of penalty factor (log λ) and interpret this plot. 
+
+Fit the LASSO regression model to the training data. Present a plot illustrating
+how the regression coefficients depend on the log of penalty factor (log λ) and
+interpret this plot.
 
 ```{r 1.3}
 # 1.3
@@ -87,12 +108,21 @@ plot(lasso, xvar = "lambda", label = TRUE)
 abline(v = -0.3, col = "red")
 
 ```
-Interpret this plot: the higher the penalty factor, the more coefficients are set to zero.
-What value of the penalty factor can be chosen if we want to select a model with only three features?
-At log(lambda) = -0.3, there are only 3 non-zero features left, Hence we can choose $\lambda = e^{-0.3} = 0.74$.
+
+Interpret this plot:
+
+The higher the penalty factor, the more coefficients are set to zero.
+
+What value of the penalty factor can be chosen if we want to select a model with
+only three features?
+
+At log(lambda) \~= -0.3, there are only 3 non-zero features left, Hence we can
+choose $\lambda = e^{-0.3} = 0.74$.
 
 ### 1.4
-4. Repeat step 3 but fit Ridge instead of the LASSO regression and compare the plots from steps 3 and 4. Conclusions?
+
+Repeat step 3 but fit Ridge instead of the LASSO regression and compare the
+plots from steps 3 and 4. Conclusions?
 
 ```{r 1.4}
 # 1.4
@@ -100,10 +130,15 @@ ridge <- glmnet(as.matrix(train[,1:100]), train$Fat, alpha = 0)
 plot(ridge, xvar = "lambda", label = TRUE)
 
 ```
-The higher the penalty factor, the smaller the coefficients. The coefficients are never set to zero, unlike in the LASSO regression.
+
+The higher the penalty factor, the smaller the coefficients. The coefficients
+are never exactly set to zero, unlike in the LASSO regression.
+
 ### 1.5
 
- 5. Use cross-validation with default number of folds to compute the optimal LASSO model. Present a plot showing the dependence of the CV score on $\log\lambda$ and comment how the CV score changes with $\log\lambda$. 
+Use cross-validation with default number of folds to compute the optimal LASSO
+model. Present a plot showing the dependence of the CV score on $\log\lambda$
+and comment how the CV score changes with $\log\lambda$.
 
 ```{r 1.5.1}
 # 1.5
@@ -112,29 +147,39 @@ plot(cv_lasso)
 best_lambda <- cv_lasso$lambda.min
 cat("best lambda:", best_lambda, "\n")
 ```
-Report the optimal $\lambda$ and how many variables were chosen in this model. 
-The optimal $\lambda$ is 0.05744535 or log(lambda) = -2.86. 
+
+The CV score decreases with increasing $\log\lambda$, until it reaches a minimum
+at $\log\lambda = -2.86$.
+
+Report the optimal $\lambda$ and how many variables were chosen in this model.
+The optimal $\lambda$ is 0.05744535 or log(lambda) = -2.86.
+
 ```{r}
 coef(cv_lasso, s = "lambda.min")
 
 ```
-9 variables were chosen in this model.
 
+9 variables were chosen in this model. (Channels 13, 14, 15, 16, 40, 41, 51, 52,
+53)
 
-Does the information displayed in the plot suggests that the optimal $\lambda$ value results in a statistically significantly better prediction than $\log\lambda = −4$ ? 
+Does the information displayed in the plot suggests that the optimal $\lambda$
+value results in a statistically significantly better prediction than
+$\log\lambda = −4$ ?
 
-*** check this ***
-The information displayed in the plot suggests that the optimal lambda has same prediction MSE as log(lambda) = -4.
-*** check this ***
+The information displayed in the plot suggests that the optimal lambda has same
+prediction MSE as log(lambda) = -4.
 
-Finally, create a scatter plot of the original test versus predicted test values for the model corresponding to optimal lambda and comment whether the model predictions are good.
+Finally, create a scatter plot of the original test versus predicted test values
+for the model corresponding to optimal lambda and comment whether the model
+predictions are good.
 
 ```{r 1.5.2, echo=FALSE, message=FALSE, warning=FALSE}
 predic_test <- predict(cv_lasso, newx = as.matrix(test[,1:100]), s = "lambda.min")
 plot(test$Fat, predic_test) + abline(1, 1)
 
 ```
-The model predictions seems to be good as the points are close to the line y=x. 
+
+The model predictions seems to be good as the points are close to the line y=x.
 
 # Assignment 2: Decision trees and logistic regression for bank marketing
 
@@ -239,9 +284,9 @@ of one branch. The split that occurred here would have resulted in a node with
 less than 7000 observations, which was not allowed with this option.
 
 The default minimum deviance is 0.01
-(https://cran.r-project.org/web/packages/tree/tree.pdf). Setting the
-minimum deviance at a much smaller number (0.0005) means that more branches are
-allowed and results in a much bigger tree.
+(<https://cran.r-project.org/web/packages/tree/tree.pdf>). Setting the minimum
+deviance at a much smaller number (0.0005) means that more branches are allowed
+and results in a much bigger tree.
 
 ## 2.3
 
@@ -281,9 +326,27 @@ text(opt_pruned_tree, pretty=0)
 
 ```
 
-The number of leaves that produces the lowest deviance on the validation set is 22. Interestingly, the deviance on the training data is higher than that on the validation data for all values of k. If k goes beyond 50, they get closer to each other, but validation will always remain lower. Though it should also be tested on the training data, this at least means the model is not overfitting. The poutcome variable is the first split, after which pdays is used for a split followed by entrepeneur. On the left side of the tree, where most decisions lead to "no", poutcome is followed by month, contact, month again, and pdays to lead to a yes decision. As the tree gets bigger it becomes difficult to read the overlapping text, but month seems to be an important variable that comes back often, and pdays a variable that leads to a split between "yes" and "no". 
+The number of leaves that produces the lowest deviance on the validation set is
+22. Interestingly, the deviance on the training data is higher than that on the
+validation data for all values of k. If k goes beyond 50, they get closer to
+each other, but validation will always remain lower. Though it should also be
+tested on the training data, this at least means the model is not overfitting.
+The poutcome variable is the first split, after which pdays is used for a split
+followed by entrepeneur. On the left side of the tree, where most decisions lead
+to "no", poutcome is followed by month, contact, month again, and pdays to lead
+to a yes decision. As the tree gets bigger it becomes difficult to read the
+overlapping text, but month seems to be an important variable that comes back
+often, and pdays a variable that leads to a split between "yes" and "no".
 
-As the number of leaves on the tree increases, the bias of the model gets reduced. However, the variance also goes up as the deviance of the validation set increases with a more complex model, signaling overfitting. Purely aiming to improve the bias of the model, then, is not necessarily a good thing if this means the variance is not staying constant. Other methods, such as bagging or random forests, may be applied to improve one of these while keeping the other constant (or at least not increasing the other enough for an undesirable effect), but in the case of a simple decision tree such as we have here, the sweet spot is somewhere in the middle.
+As the number of leaves on the tree increases, the bias of the model gets
+reduced. However, the variance also goes up as the deviance of the validation
+set increases with a more complex model, signaling overfitting. Purely aiming to
+improve the bias of the model, then, is not necessarily a good thing if this
+means the variance is not staying constant. Other methods, such as bagging or
+random forests, may be applied to improve one of these while keeping the other
+constant (or at least not increasing the other enough for an undesirable
+effect), but in the case of a simple decision tree such as we have here, the
+sweet spot is somewhere in the middle.
 
 ## 2.4
 
@@ -354,7 +417,13 @@ fun_scoring(conf_mat)
 
 ```
 
-Using the loss matrix, the true positive rate has gone up, along with the false positive rate. The false negative rate has gone down slightly, but is still not very good compared to the true positive rate. As we are penalizing false negative rate by five times what we are penalizing false positives with, the model is now much more likely to predict "yes". In combination with the unbalanced nature of the data, this has led to a highly increase false positive rate, rather than a better true positive rate.
+Using the loss matrix, the true positive rate has gone up, along with the false
+positive rate. The false negative rate has gone down slightly, but is still not
+very good compared to the true positive rate. As we are penalizing false
+negative rate by five times what we are penalizing false positives with, the
+model is now much more likely to predict "yes". In combination with the
+unbalanced nature of the data, this has led to a highly increase false positive
+rate, rather than a better true positive rate.
 
 ## 2.6
 
@@ -407,6 +476,6 @@ title("ROC Decision Tree")
 
 ```
 
-Looking purely at the ROC curves, it seems that the logistic regression performs slightly better than the decision tree. However, considering the unbalanced nature of the data, it might be better to consider a precision-recall curve. 
-
-
+Looking purely at the ROC curves, it seems that the logistic regression performs
+slightly better than the decision tree. However, considering the unbalanced
+nature of the data, it might be better to consider a precision-recall curve.
