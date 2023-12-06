@@ -1,0 +1,16 @@
+---
+title: "Lab 3 Report"
+author: "Hugo Morvan & Marijn Jaarsma & Simon Jorstedt "
+date: "`r Sys.Date()`"
+output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: 80
+---
+
+
+
+
+# Appendix
+```{r appendix, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
