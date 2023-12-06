@@ -1,0 +1,41 @@
+---
+title: "simons_doc"
+author: "Simon Jorstedt"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+
+# Assignment 3
+
+```{r Setup, echo=F}
+# Setup
+
+library(magrittr)
+library(neuralnet)
+```
+
+
+```{r}
+# Assignment 3.1
+
+set.seed(1234567890)
+Var <- runif(500, 0, 10)
+mydata <- data.frame(Var, Sin=sin(Var))
+tr <- mydata[1:25,] # Training
+te <- mydata[26:500,] # Test
+
+```
+
+```{r, eval=F}
+# Random initialization of the weights in the interval [-1, 1]
+winit <- # Your code here
+nn <- neuralnet(# Your code here)
+
+# Plot of the training data (black), test data (blue), and predictions (red)
+
+plot(tr, cex=2)
+points(te, col = "blue", cex=1)
+points(te[,1],predict(nn,te), col="red", cex=1
+```
+
