@@ -8,23 +8,39 @@ output: pdf_document
 
 # Assignment 3
 
-```{r Setup, echo=F}
+```{r Setup, echo=F, message=F, warning=F}
 # Setup
 
 library(magrittr)
 library(neuralnet)
+library(dplyr)
 ```
 
+## Assignment 3.1
+In Figure 3.1 below, we see the result of a neural net applied to a set of $25$ datapoints uniformly spread over the interval $[0, 10]$, with the response being the sin function applied to the datapoints, with no added random error. These training points are colored dark green and made small. Red points are the pointwise predictions by the neural net. The blue curve represents the true sin curve.
 
-```{r}
+```{r, echo=F, out.width="70%", fig.align='center'}
 # Assignment 3.1
 
+# Create sine data
 set.seed(1234567890)
 Var <- runif(500, 0, 10)
 mydata <- data.frame(Var, Sin=sin(Var))
 tr <- mydata[1:25,] # Training
 te <- mydata[26:500,] # Test
 
+# Training a neural network
+nn <- neuralnet(data = tr,
+                formula = Sin ~ Var,
+                hidden = c(10))
+
+# Plot the training, test and predicted data
+plot(tr, col="darkgreen",
+     main = "Fig 3.1: Simple neural network fitting the sin function",
+     xlab = "x",
+     ylab = "sin(x)")
+points(arrange(te, Var), type="l", col="blue")
+points(tr$Var, nn$response, col="red", cex=2)
 ```
 
 ```{r, eval=F}
