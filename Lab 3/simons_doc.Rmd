@@ -131,6 +131,49 @@ plot(x = mydata_0_to_50$Var,
 points(tr %>% arrange(Var), col="darkgreen", type = "p", lwd=1.5)
 points(arrange(mydata_0_to_50, Var), type="l", col="blue", lwd=2)
 
+
+# Limit
+sign_of_W1 <- c(nn$weights[[1]][[1]][1,] > 0, 1)
+
+limit <- sum(sign_of_W1 * nn$weights[[1]][[2]])
+abline(b=0, a=limit-3, col="gold")
+```
+
+## Assignment 3.4
+In Assignment 3.3 we saw that the prediction curve of the Neural Network appeared to converge to some value.
+
+```{r}
+
+nn$weights[[1]][[1]][1,]
+sign_of_W1 <- c(nn$weights[[1]][[1]][1,] > 0, 1)
+sign_of_W1
+
+limit <- sum(sign_of_W1 * nn$weights[[1]][[2]])
+limit
+#abline(b=0, a=limit, col="gold")
+#
+#
+
+sigmoid <- function(x){
+  exp(x) / (1 + exp(x))
+}
+
+y_my_understanding <- function(x){
+  # Apply first layer
+  out <- sigmoid(nn$weights[[1]][[1]][1,] * x + nn$weights[[1]][[1]][2,])
+  
+  # Apply second layer (output)
+  out <- nn$weights[[1]][[2]][1:10] %*% out + nn$weights[[1]][[2]][11]
+  
+  return(out[1])
+}
+
+predict(nn, data.frame(Var=c(1)))
+y_my_understanding(1)
+
+
+plot(x=seq(0, 50, 0.1), y=sapply(seq(0, 50, 0.1), y_my_understanding), type="l")
+points(seq(0, 50, 0.1), sin(seq(0, 50, 0.1)))
 ```
 
 
