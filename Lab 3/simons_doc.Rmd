@@ -41,7 +41,73 @@ plot(tr, col="darkgreen",
      ylab = "sin(x)")
 points(arrange(te, Var), type="l", col="blue")
 points(tr$Var, nn$response, col="red", cex=2)
+
 ```
+
+## Assignment 3.2
+The neural net in Assignment 3.1 used a standard sigmoid activation function. Now we are going to use a linear activation function (or the identity) $h_1(x) = x$, the ReLu $h_2(x) = \max(0, x)$, and the softplus $h_3(x) = \ln(1+e^x)$ each in their own neural network. However, as we tried this, we ran into an issue with the ReLu. It does not appear to be preprogrammed in the `neuralnet` function, and neither does `neuralnet` seem to be able to handle the undifferentiable point in ReLu. Instead we will be using a function we call the "soft relu" $h_4(x) = \ln(1+e^x) \cdot \frac{e^x}{1+e^x}$, which is constructed by multiplying the softplus function with its derivative. That derivative happens also to be the sigmoid function. The result is a function that resembles the softplus, but that makes a less smooth turn around $x=0$, and thus approximates the ReLu better than the softplus.
+
+The result is roughly the same as in Assignment 3.1, which was already optimal.
+
+```{r, echo=F}
+# Assignment 3.2
+
+## NN with linear activation function
+nn_linear <- neuralnet(data = tr,
+                   formula = Sin ~ Var,
+                   hidden = c(10),
+                   act.fct = function(x){x})
+
+## NN with soft relu activation function
+soft_relu <- function(x){log(1+exp(x))*(exp(x))/(1+exp(x))}
+nn_relu <- neuralnet(data = tr,
+                     formula = Sin ~ Var,
+                     hidden = c(10),
+                     act.fct = soft_relu)
+
+## NN with softplus activation function
+nn_softplus <- neuralnet(data = tr,
+                         formula = Sin ~ Var,
+                         hidden = c(10),
+                         act.fct = function(x){log(1+exp(x))})
+
+```
+
+```{r NN PLOTS, echo=F, out.width="70%", fig.align='center'}
+# Assignment 3.2
+
+## Plot grid of neural network results
+layout(matrix(c(1,2,3), nrow=1))
+
+# Plot result of NN with linear activation
+plot(tr, col="darkgreen",
+     main = "Linear activation",
+     xlab = "x",
+     ylab = "sin(x)")
+points(arrange(te, Var), type="l", col="blue")
+points(tr$Var, nn_linear$response, col="red", cex=2)
+
+# Plot result of NN with soft relu activation
+plot(tr, col="darkgreen",
+     main = "Soft relu activation",
+     xlab = "x",
+     ylab = "sin(x)")
+points(arrange(te, Var), type="l", col="blue")
+points(tr$Var, nn_relu$response, col="red", cex=2)
+
+# Plot result of NN with softplus activation
+plot(tr, col="darkgreen",
+     main = "Softplus activation",
+     xlab = "x",
+     ylab = "sin(x)")
+points(arrange(te, Var), type="l", col="blue")
+points(tr$Var, nn_softplus$response, col="red", cex=2)
+
+# Set figure title
+mtext("Figure 3.2: Three activation function", side=3, outer=TRUE, line=-1)
+```
+
+
 
 ```{r, eval=F}
 # Random initialization of the weights in the interval [-1, 1]
