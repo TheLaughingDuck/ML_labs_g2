@@ -1,5 +1,5 @@
 ---
-title: "lab2"
+title: "Lab 2 Block 1"
 author: "Hugo Morvan & Marijn Jaarsma & Simon Jorstedt "
 date: "`r Sys.Date()`"
 output: pdf_document
@@ -9,7 +9,7 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ```{r libraries, message=FALSE, warning=FALSE, include=FALSE}
@@ -25,6 +25,7 @@ library(rpart)
 * Assignment 1 was coded and analysed by Hugo
 * Assignment 2 was coded and analysed by Marijn
 * Assignment 3 was coded and analysed by Simon
+
 All code and questions were analysed and discussed together.
 
 ## Assignment 1. Explicit regularization
