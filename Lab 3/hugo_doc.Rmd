@@ -8,23 +8,129 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+LAB IS DUE December 18th
 
-## R Markdown
+# 2. SUPPORT VECTOR MACHINES
+The code in the file Lab3Block1 2021 SVMs St.R performs SVM model selection to classify the spam dataset. To do so, the code uses the function ksvm from the R package kernlab, which also includes the spam dataset. All the SVM models to select from use the radial basis function kernel (also known as Gaussian) with a width of 0.05. The C parameter varies between the models. Run the code in the file Lab3Block1 2021 SVMs St.R and answer the following questions.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r}
+# Lab 3 block 1 of 732A99/TDDE01/732A68 Machine Learning
+# Author: jose.m.pena@liu.se
+# Made for teaching purposes
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+library(kernlab)
+set.seed(1234567890)
 
-```{r cars}
-summary(cars)
+data(spam)
+foo <- sample(nrow(spam))
+spam <- spam[foo,]
+spam[,-58]<-scale(spam[,-58])
+tr <- spam[1:3000, ] # Training set, 3000 samples
+va <- spam[3001:3800, ] # Validation set, 800 samples
+trva <- spam[1:3800, ] # Training+validation set, 3800 samples
+te <- spam[3801:4601, ]  # Test set, 800 samples
+
+nrow(spam) # 4601
+
+by <- 0.3
+err_va <- NULL
+for(i in seq(by,5,by)){ # 0.3 0.6 0.9 1.2 1.5 1.8 2.1 2.4 2.7 3.0 3.3 3.6 3.9 4.2 4.5 4.8
+  filter <- ksvm(type~.,data=tr,kernel="rbfdot",kpar=list(sigma=0.05),C=i,scaled=FALSE)
+  mailtype <- predict(filter,va[,-58])
+  t <- table(mailtype,va[,58])
+  err_va <-c(err_va,(t[1,2]+t[2,1])/sum(t))
+}
+
+# Filter0: data=tr, C=which.min(err_va)*by
+filter0 <- ksvm(type~., data=tr, kernel="rbfdot", kpar=list(sigma=0.05), C=which.min(err_va)*by, scaled=FALSE)
+mailtype <- predict(filter0,va[,-58]) # Predictions on the validation set
+t <- table(mailtype,va[,58])
+err0 <- (t[1,2]+t[2,1])/sum(t)
+err0
+
+#***This filter cannot be used because it is using the validation dataset for prediction therefore the error reported cannot be compared with the other filters that use the test data for prediction.
+
+
+# The difference between filter0 and filter1 is that filter0 is using the validation dataset for the prediction while filter 1 uses the test dataset for the prediction. 
+
+# Filter1: data=tr, 
+filter1 <- ksvm(type~., data=tr, kernel="rbfdot", kpar=list(sigma=0.05), C=which.min(err_va)*by, scaled=FALSE)
+mailtype <- predict(filter1,te[,-58]) # Predictions on the test set
+t <- table(mailtype,te[,58])
+err1 <- (t[1,2]+t[2,1])/sum(t)
+err1
+
+#The difference between filter1 and filter2 is that filter1 training dataset for training while fitler2 is using training and validation for training. Both are using the test dataset for prediction. If we were to use filter 1, we would completely disregard the validation dataset in the training of the filter, therefore **my opinion** is that filter2 is better because it is trained on bigger dataset (training+validation) thus it is more likely to be more accurate. This is confimed by the error rate of filter2 which is slightly lower than the error rate of filter1.
+
+# Filter2: data=trva, not good?, training on the validation set and the training set
+filter2 <- ksvm(type~.,data=trva,kernel="rbfdot",kpar=list(sigma=0.05),C=which.min(err_va)*by,scaled=FALSE)
+mailtype <- predict(filter2,te[,-58]) # Predictions on the test set
+t <- table(mailtype,te[,58])
+err2 <- (t[1,2]+t[2,1])/sum(t)
+err2
+
+# Filter3: data=spam, not good because training on the whole dataset, also predicting on the test dataset. 
+
+filter3 <- ksvm(type~.,data=spam,kernel="rbfdot",kpar=list(sigma=0.05),C=which.min(err_va)*by,scaled=FALSE)
+mailtype <- predict(filter3,te[,-58]) # Predictions on the test set
+t <- table(mailtype,te[,58])
+err3 <- (t[1,2]+t[2,1])/sum(t)
+err3
+
+#*** This filter cannot be used because it is using the whole dataset for the training, therefore the prediction on the test data, which is included in the training data, is not reliable.
+
+
+# Questions
+
+# 1. Which filter do we return to the user ? filter0, filter1, filter2 or filter3? Why?
+# -> We return filter2 for the reasons stated above.
+
+# 2. What is the estimate of the generalization error of the filter returned to the user? err0, err1, err2 or err3? Why?
+# -> err3 because it is trained on the whole dataset and therefore the error rate is the most likely to be close to the generalization error.
+
+```
+###################################################
+### code chunk number 4: ksvm
+###################################################
+## simple example using the promotergene data set
+data(promotergene)
+## create test and training set
+tindex <- sample(1:dim(promotergene)[1],5)
+genetrain <- promotergene[-tindex, ]
+genetest <- promotergene[tindex,]
+## train a support vector machine
+gene <- ksvm(Class~.,data=genetrain,kernel="rbfdot",kpar="automatic",C=60,cross=3,prob.model=TRUE)
+gene
+predict(gene, genetest)
+predict(gene, genetest, type="probabilities")
+###################################################*
+
+## (3) 
+Once a SVM has been fitted to the training data, a new point is essentially classified according to the sign of a linear combination of the kernel function values between the support vectors and the new point.
+You are asked to implement this linear combination for `filter3` . You should make use of the functions `alphaindex` that return the indexes of the support vectors, `coef` that returns the linear coefficients for the support vectors, and `b` , that returns the negative intercept of the linear combination. See the help file of the kernlab package for more information. You can check if your results are correct by comparing them with the output of the function predict where you set type = "decision".
+Do so for the first 10 points in the spam dataset. Feel free to use the template provided in the Lab3Block1 2021 SVMs St.R file.
+
+```{r}
+
+# 3. Implementation of SVM predictions.
+
+sv<-alphaindex(filter3)[[1]] # indexes of the support vectors
+co<-coef(filter3)[[1]] # linear coefficients for the support vectors
+inte<- - b(filter3) # negative intercept of the linear combination
+k<-NULL
+for(i in 1:10){ # We produce predictions for just the first 10 points in the dataset.
+  cat("point:",i,"/10","\n")
+  k2<-NULL
+  for(j in 1:length(sv)){
+    cat("support vector:",j,"/",length(sv),"\r")
+    # a new point is classified according to the sign of a linear combination of the kernel function values between the support vectors and the new point.
+    # "kernel used: "radial basis function kernel (also known as Gaussian) with a width of 0.05"
+    k2 <- c(k2, co[j]*exp(-0.05*sum((spam[i,-58]-spam[sv[j],-58])^2)))
+  }
+  k<-c(k, sign(sum(k2)+inte))
+}
+k
+predict(filter3,spam[1:10,-58], type = "decision")
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Predictions are working !
