@@ -19,7 +19,7 @@ library(dplyr)
 ## Assignment 3.1
 In Figure 3.1 below, we see the result of a neural net applied to a set of $25$ datapoints uniformly spread over the interval $[0, 10]$, with the response being the sin function applied to the datapoints, with no added random error. These training points are colored dark green and made small. Red points are the pointwise predictions by the neural net. The blue curve represents the true sin curve.
 
-```{r, echo=F, out.width="70%", fig.align='center'}
+```{r Train and visualise first NN, echo=F, out.width="70%", fig.align='center'}
 # Assignment 3.1
 
 # Create sine data
@@ -49,7 +49,7 @@ The neural net in Assignment 3.1 used a standard sigmoid activation function. No
 
 The result is roughly the same as in Assignment 3.1, which was already optimal.
 
-```{r, echo=F}
+```{r nn training with three different activation functions, echo=F}
 # Assignment 3.2
 
 ## NN with linear activation function
@@ -73,7 +73,7 @@ nn_softplus <- neuralnet(data = tr,
 
 ```
 
-```{r NN PLOTS, echo=F, out.width="70%", fig.align='center'}
+```{r Figure 3.2 NN PLOTS, echo=F, out.width="70%", fig.align='center'}
 # Assignment 3.2
 
 ## Plot grid of neural network results
@@ -110,7 +110,7 @@ mtext("Figure 3.2: Three activation function", side=3, outer=TRUE, line=-1)
 ## Assignment 3.3
 Now we generate data similarly to before in the range $[0,50]$ and attempt to predict the value of the $\sin$ function applied to these values using the Neural Network that was trained in Assignment 3.1. Essentially we will use the Neural Network to predict the response of data from far outside the range of the training data. The result of this is plotted in Figure 3.3. Again the training data of the model is represented by green circles, and the predictions are represented by the red curve. The blue curve represents the entire new dataset (essentially the sin function graph). Clearly, the Neural Network has a fatal flaw: It breaks away, producing terrible predictions immediately outside the range of the training data.
 
-```{r, echo=F, out.width="70%", fig.align='center'}
+```{r Figure 3.3, echo=F, out.width="70%", fig.align='center'}
 # Assignment 3.3
 
 set.seed(9378364)
@@ -132,50 +132,24 @@ points(tr %>% arrange(Var), col="darkgreen", type = "p", lwd=1.5)
 points(arrange(mydata_0_to_50, Var), type="l", col="blue", lwd=2)
 
 
-# Limit
-sign_of_W1 <- c(nn$weights[[1]][[1]][1,] > 0, 1)
-
-limit <- sum(sign_of_W1 * nn$weights[[1]][[2]])
-abline(b=0, a=limit-3, col="gold")
+# Find the limit of the NN as x increases
+# This had to be hardcoded because the neuralnet function has its parameters
+# structured in a quite unintuitive way.
+sign_of_W1 <- nn$result[c(5,7,9,11,13,15,17,19,21,23)] > 0
+limit <- sum(sign_of_W1 * nn$result[25:34]) + nn$result[24]
+abline(b=0, a=limit, col="gold")
 ```
 
 ## Assignment 3.4
-In Assignment 3.3 we saw that the prediction curve of the Neural Network appeared to converge to some value.
+In Assignment 3.3 we saw that the prediction curve of the Neural Network appeared to converge to some value. To find this limit, we formulate the function $f(x)$ of the Neural Network, first in compact notation, and then as a linear combination.
 
-```{r}
+$$f(x) = \boldsymbol{W}^{(2)} \sigma \Big( \boldsymbol{W}^{(1)}x + \boldsymbol{b}^{(1)} \Big) + b^{(2)} = \boldsymbol{W}^{(2)}_1 \sigma \Big( \boldsymbol{W}^{(1)}_1 x + \boldsymbol{b}^{(1)}_1 \Big) + \cdots + \boldsymbol{W}^{(2)}_{10} \sigma \Big( \boldsymbol{W}^{(1)}_{10} x + \boldsymbol{b}^{(1)}_{10} \Big) + b^{(2)}$$
 
-nn$weights[[1]][[1]][1,]
-sign_of_W1 <- c(nn$weights[[1]][[1]][1,] > 0, 1)
-sign_of_W1
+When studying this function, we find that if $\boldsymbol{W}^{(2)}_i$ is non-negative, then $\sigma \Big( \boldsymbol{W}^{(1)}_i x + \boldsymbol{b}^{(1)}_i \Big)$ will approach $1$ as $x$ becomes larger. If $\boldsymbol{W}^{(2)}_i$ is negative, then $\sigma \Big( \boldsymbol{W}^{(1)}_i x + \boldsymbol{b}^{(1)}_i \Big)$ will approach $0$ as $x$ becomes larger. This has the effect that as $x \to \infty$, $f(x)$ reduces to the following, where $\delta_i$ is $0$ if $\boldsymbol{W}^{(2)}_i < 0$ and $1$ otherwise.
 
-limit <- sum(sign_of_W1 * nn$weights[[1]][[2]])
-limit
-#abline(b=0, a=limit, col="gold")
-#
-#
+$$f(x) = \boldsymbol{W}^{(2)}_1 \cdot \delta_1 + \cdots + \boldsymbol{W}^{(2)}_{10} \cdot \delta_{10} + b^{(2)}$$
 
-sigmoid <- function(x){
-  exp(x) / (1 + exp(x))
-}
-
-y_my_understanding <- function(x){
-  # Apply first layer
-  out <- sigmoid(nn$weights[[1]][[1]][1,] * x + nn$weights[[1]][[1]][2,])
-  
-  # Apply second layer (output)
-  out <- nn$weights[[1]][[2]][1:10] %*% out + nn$weights[[1]][[2]][11]
-  
-  return(out[1])
-}
-
-predict(nn, data.frame(Var=c(1)))
-y_my_understanding(1)
-
-
-plot(x=seq(0, 50, 0.1), y=sapply(seq(0, 50, 0.1), y_my_understanding), type="l")
-points(seq(0, 50, 0.1), sin(seq(0, 50, 0.1)))
-```
-
+We calculate this limit for the trained Neural Network from Assignment 3.1, and include the limit as a gold line in Figure 3.3.
 
 
 ```{r, eval=F}
