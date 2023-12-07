@@ -107,6 +107,32 @@ points(tr$Var, nn_softplus$response, col="red", cex=2)
 mtext("Figure 3.2: Three activation function", side=3, outer=TRUE, line=-1)
 ```
 
+## Assignment 3.3
+Now we generate data similarly to before in the range $[0,50]$ and attempt to predict the value of the $\sin$ function applied to these values using the Neural Network that was trained in Assignment 3.1. Essentially we will use the Neural Network to predict the response of data from far outside the range of the training data. The result of this is plotted in Figure 3.3. Again the training data of the model is represented by green circles, and the predictions are represented by the red curve. The blue curve represents the entire new dataset (essentially the sin function graph). Clearly, the Neural Network has a fatal flaw: It breaks away, producing terrible predictions immediately outside the range of the training data.
+
+```{r, echo=F, out.width="70%", fig.align='center'}
+# Assignment 3.3
+
+set.seed(9378364)
+Var <- runif(500, 0, 50)
+mydata_0_to_50 <- data.frame(Var, Sin=sin(Var))
+
+# Plot NN fitted values to the new data
+mydata_0_to_50 <- mydata_0_to_50 %>%
+  mutate(nn_prediction = predict(nn, data.frame(mydata_0_to_50$Var))) %>%
+  arrange(Var)
+
+plot(x = mydata_0_to_50$Var,
+     y = mydata_0_to_50$nn_prediction,
+     col="red", type="l", cex=2,
+     main = "Fig 3.3: Neural network predictions on new data from outside the\nrange of training data",
+     xlab = "x",
+     ylab = "sin(x)")
+points(tr %>% arrange(Var), col="darkgreen", type = "p", lwd=1.5)
+points(arrange(mydata_0_to_50, Var), type="l", col="blue", lwd=2)
+
+```
+
 
 
 ```{r, eval=F}
