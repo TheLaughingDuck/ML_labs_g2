@@ -40,7 +40,9 @@ plot(tr, col="darkgreen",
      xlab = "x",
      ylab = "sin(x)")
 points(arrange(te, Var), type="l", col="blue")
-points(tr$Var, nn$response, col="red", cex=2)
+points(tr$Var,
+       predict(nn, data.frame(tr$Var)),
+       col="red", cex=2)
 
 ```
 
@@ -60,10 +62,10 @@ nn_linear <- neuralnet(data = tr,
 
 ## NN with soft relu activation function
 soft_relu <- function(x){log(1+exp(x))*(exp(x))/(1+exp(x))}
-nn_relu <- neuralnet(data = tr,
-                     formula = Sin ~ Var,
-                     hidden = c(10),
-                     act.fct = soft_relu)
+nn_softrelu <- neuralnet(data = tr,
+                         formula = Sin ~ Var,
+                         hidden = c(10),
+                         act.fct = soft_relu)
 
 ## NN with softplus activation function
 nn_softplus <- neuralnet(data = tr,
@@ -85,7 +87,9 @@ plot(tr, col="darkgreen",
      xlab = "x",
      ylab = "sin(x)")
 points(arrange(te, Var), type="l", col="blue")
-points(tr$Var, nn_linear$response, col="red", cex=2)
+points(tr$Var,
+       predict(nn_linear, data.frame(tr$Var)),
+       col="red", cex=2)
 
 # Plot result of NN with soft relu activation
 plot(tr, col="darkgreen",
@@ -93,7 +97,9 @@ plot(tr, col="darkgreen",
      xlab = "x",
      ylab = "sin(x)")
 points(arrange(te, Var), type="l", col="blue")
-points(tr$Var, nn_relu$response, col="red", cex=2)
+points(tr$Var, 
+       predict(nn_softrelu, data.frame(tr$Var)),
+       col="red", cex=2)
 
 # Plot result of NN with softplus activation
 plot(tr, col="darkgreen",
@@ -101,7 +107,9 @@ plot(tr, col="darkgreen",
      xlab = "x",
      ylab = "sin(x)")
 points(arrange(te, Var), type="l", col="blue")
-points(tr$Var, nn_softplus$response, col="red", cex=2)
+points(tr$Var,
+       predict(nn_softplus, data.frame(tr$Var)),
+       col="red", cex=2)
 
 # Set figure title
 mtext("Figure 3.2: Three activation function", side=3, outer=TRUE, line=-1)
@@ -149,7 +157,10 @@ When studying this function, we find that if $\boldsymbol{W}^{(2)}_i$ is non-neg
 
 $$f(x) = \boldsymbol{W}^{(2)}_1 \cdot \delta_1 + \cdots + \boldsymbol{W}^{(2)}_{10} \cdot \delta_{10} + b^{(2)}$$
 
-We calculate this limit for the trained Neural Network from Assignment 3.1, and include the limit as a gold line in Figure 3.3.
+We calculate this limit for the trained Neural Network from Assignment 3.1 to be about `r round(limit,2)`, and include the limit as a gold line in Figure 3.3.
+
+
+
 
 
 ```{r, eval=F}
