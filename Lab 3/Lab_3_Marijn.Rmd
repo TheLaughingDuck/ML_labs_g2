@@ -1,0 +1,46 @@
+---
+title: "Lab 3 Marijn"
+author: "Marijn Jaarsma"
+date: "2023-12-07"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Libraries, echo=FALSE, warning=FALSE, message=FALSE}
+library(geosphere)
+
+```
+
+```{r Q1}
+# Read in data and merge
+df_stations <- read.csv("stations.csv", fileEncoding="latin1")
+df_temps <- read.csv("temps50k.csv")
+df_st <- merge(df_stations, df_temps, by="station_number")
+
+# Define hyper parameters
+h_distance <- 1e100
+h_date <- 10
+h_time <- 
+a <- 58.4274 # The point to predict (up to the students)
+b <- 14.826
+date <- "2013-11-04" # The date to predict (up to the students)
+times <- c("04:00:00", "06:00:00", "08:00:00", "10:00:00", "12:00:00", "14:00:00", "16:00:00", "18:00:00", "20:00:00", "22:00:00", "24:00:00")
+temp <- vector(length=length(times))
+
+# Students’ code here
+plot(temp, type="o")
+
+# Distance kernel
+### IS L THE SMOOTHING CONSTANT H_DISTANCE?? ###
+k_dist <- exp(-sqrt(sum(distHaversine(df_st[, c("longitude", "latitude")], c(a, b))^2))^2 / (2 * h_distance^2))
+
+# Date kernel
+v_date_differences <- as.numeric(as.Date(df_st[, "date"], "%Y-%m-%d") - as.Date(date, "%Y-%m-%d"))
+k_date <- exp(-sqrt(sum(v_date_differences^2)) / (2 * h_date^2))
+
+# Hour kernel
+as.Date(df_st[, "time"], "%H:%M:%S") # GET JUST HOUR DIFFERENCE
+```
