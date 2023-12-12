@@ -14,6 +14,8 @@ library(geosphere)
 
 ```
 
+# 1. Kernel Methods
+## Setup
 ```{r Q1_Setup}
 # Read in data and merge
 df_stations <- read.csv("stations.csv", fileEncoding="latin1")
@@ -21,66 +23,91 @@ df_temps <- read.csv("temps50k.csv")
 df_st <- merge(df_stations, df_temps, by="station_number")
 
 # Define hyper parameters
-h_distance <- 4500000
+h_distance <- 4430000
 h_date <- 10000
 h_time <- 8
 
 # Prediction point
 a <- 58.4274
 b <- 14.826
-date <- "2013-11-04"
+# a <- 55.386246
+# b <- 13.056955
+date <- "2013-06-04"
 times <- c("04:00:00", "06:00:00", "08:00:00", "10:00:00", "12:00:00", "14:00:00", "16:00:00", "18:00:00", "20:00:00", "22:00:00", "24:00:00")
-temp <- vector(length=length(times))
 
 ```
 
+## Kernel Computation (Sum of Three Gaussian Kernels)
 ```{r Q1_Code}
 # Remove rows with observations posterior to wanted time
 data_dates <- strptime(df_st[, "date"], "%Y-%m-%d", tz="UTC")
 wanted_date <- strptime(date, "%Y-%m-%d", tz="UTC")
-df_st <- df_st[which(data_times < wanted_time),]
+df_st_filt <- df_st[which(data_times < wanted_date),]
 
 # Distance kernel
-k_dist <- exp(-(distHaversine(df_st[, c("longitude", "latitude")], c(a, b))^2) / (2 * h_distance^2))  
+k_dist <- exp(-(distHaversine(df_st_filt[, c("longitude", "latitude")], c(a, b))^2) / (2 * h_distance^2))  
 
-plot(distHaversine(df_st[, c("longitude", "latitude")], c(a, b)),
+plot(distHaversine(df_st_filt[, c("longitude", "latitude")], c(a, b)),
      k_dist,
      xlab="Distance (m)", ylab="Kernel Value (Gaussian)")
+title(paste0("Distance Kernel (h=", h_distance, ")"))
+
+### FIND BEST h_distance ###
+# v <- vector()
+# for (i in seq(1000000, 7000000, by=10000)) {
+#   k_dist <- exp(-(distHaversine(df_st_filt[, c("longitude", "latitude")], c(a, b))^2) / (2 * i^2))  
+#   v <- append(v, max(k_dist) - min(k_dist))
+# }
+# 
+# plot(seq(1000000, 7000000, by=10000), v)
+
+# seq(1000000, 7000000, by=10000)[which(v == max(v))]
+############################
 
 # Date kernel
-v_date_differences <- as.numeric(as.Date(date, "%Y-%m-%d") - as.Date(df_st[, "date"], "%Y-%m-%d"))
+v_date_differences <- as.numeric(as.Date(date, "%Y-%m-%d") - as.Date(df_st_filt[, "date"], "%Y-%m-%d"))
 k_date <- exp(-(v_date_differences^2) / (2 * h_date^2))
 
 plot(v_date_differences, k_date,
      xlab="Distance (days)", ylab="Kernel Value (Gaussian)")
+title(paste0("Date Kernel (h=", h_date, ")"))
 
 # Hour kernel
 # https://stackoverflow.com/questions/53818163/calculate-difference-between-hours-not-considering-date
-data_hour <- as.numeric(substr(df_st[, "time"], 1, 2))
-wanted_hours <- matrix(rep(sapply(times, function(x) {as.numeric(substr(x, 1, 2))}), nrow(df_st)), ncol=length(times), byrow=TRUE)
+data_hour <- as.numeric(substr(df_st_filt[, "time"], 1, 2))
+wanted_hours <- matrix(rep(sapply(times, function(x) {as.numeric(substr(x, 1, 2))}), nrow(df_st_filt)), ncol=length(times), byrow=TRUE)
 v_time_differences <- abs(sweep(wanted_hours, 1, data_hour))
 k_time <- exp(-(v_time_differences^2) / (2 * h_time^2))
 
-plot(v_time_differences, k_time,
+plot(v_time_differences[, 1], k_time[, 1],
      xlab="Distance (hours)", ylab="Kernel Value (Gaussian)")
+title(paste0("Time Kernel (h=", h_time, ")"))
 
 # Combined kernel summed
 k_comb_sum <- sweep(k_time, 1, k_dist + k_date, FUN="+")
 
 # Non-parametric kernel regression
-temp <- colSums(k_comb_sum * df_st$air_temperature) / colSums(k_comb_sum)
-plot(temp, type="o", xaxt="n", xlab="Time")
+temp_sum <- colSums(k_comb_sum * df_st_filt$air_temperature) / colSums(k_comb_sum)
+plot(temp_sum, type="o", xaxt="n", xlab="Time", ylab="Predicted Temperature")
 axis(1, at=1:length(temp), labels=times)
+title(paste0("Summed Kernel Predictions\n", date))
 
 ```
 
+## Kernel Computation (Product of Three Gaussian Kernels)
 ```{r Q1_Mult_Kernel}
 # Combined kernel product
 k_comb_prod <- k_dist * k_date * k_time
 
 # Non-parametric kernel regression
-temp <- colSums(k_comb_prod * df_st$air_temperature) / colSums(k_comb_prod)
-plot(temp, type="o", xaxt="n", xlab="Time")
+temp_prod <- colSums(k_comb_prod * df_st_filt$air_temperature) / colSums(k_comb_prod)
+plot(temp_prod, type="o", xaxt="n", xlab="Time", ylab="Predicted Temperature")
 axis(1, at=1:length(temp), labels=times)
+title(paste0("Product Kernel Predictions\n", date))
 
 ```
+
+## Kernel Comparison
+The product kernel produces slightly higher values than the summed kernel. This is due to the division in the computation of the predictions. Multiplying the kernels gives smaller values than summing would, as the kernel values are all between 0 and 1 due to the fact that a Gaussian kernel function was used. However, when dividing by a smaller value this produces slightly higher values than the summed kernel produces. 
+
+The model is not very flexible to different inputs; a different location or time of year gives almost the same result. Perhaps different weights should be attached to the different kernels. The hour kernel is always the same, and has equal weight to the other two kernels. Additionally, the distance kernel is only on a range between about 0.32 and 0.42 rather than 0 and 1 as the distance values in this kernel are so large. A big difference in distance may have a big impact on the predicted temperature, but this doesn't reflect from the kernel value. A linear combination between the kernels, where the weights may be tuned may be a better option.
