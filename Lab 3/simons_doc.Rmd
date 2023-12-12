@@ -112,7 +112,7 @@ points(tr$Var,
        col="red", cex=2)
 
 # Set figure title
-mtext("Figure 3.2: Three activation function", side=3, outer=TRUE, line=-1)
+mtext("Figure 3.2: Three activation functions", side=3, outer=TRUE, line=-1)
 ```
 
 ## Assignment 3.3
@@ -159,19 +159,49 @@ $$f(x) = \boldsymbol{W}^{(2)}_1 \cdot \delta_1 + \cdots + \boldsymbol{W}^{(2)}_{
 
 We calculate this limit for the trained Neural Network from Assignment 3.1 to be about `r round(limit,2)`, and include the limit as a gold line in Figure 3.3.
 
+## Assignment 3.5
+Now we are interested in training a Neural Network to learn the arcsin function, which is the inverse of the sine function. To do this, we first generate $500$ observations in the interval $[0, 10]$, and then apply the sine function to each observation. We then train a Neural Network with the same structure as previously, but with the observations as response variable, and the sine function applied to the observations as the explanatory variable. In Figure 3.4 we plot the training observations with a green line, and the predictions (on the training data) as a red line. Note that the \textit{predicted} $\hat{x}$ are indicated on the horizontal axis, and \textit{explanatory} $\sin(x)$ are indicated on the vertical axis, in order to facilitate easy comparison with previous figures.
+
+In Figure 3.4 we see clearly that the Neural Network is terrible at predicting the observations. This is not surprising, since the sine function is surjective, but not injective, and thus can not be uniquely inverted. Additionally, the range of the explanatory variable ($[-1, 1]$) is quite narrow, which makes it harder for the NN to capture the behaviour in the response variable.
+
+```{r Figure 3.4, echo=F, out.width="70%", fig.align='center'}
+set.seed(9239462)
+x_vals <- runif(500, 0, 10)
+df_sindata <- data.frame(x=x_vals, sin_x = sin(x_vals))
+
+# Train a nn for the arcsin function
+nn_arcsin <- neuralnet(data = df_sindata,
+                       formula = x ~ sin_x,
+                       hidden = c(10))
+
+# Arrange the data so observations can be connected with lines in plot below
+df_sindata <- df_sindata %>%
+  mutate(predicted_x = predict(nn_arcsin, data.frame(df_sindata$sin_x))) %>%
+  arrange(predicted_x)
 
 
 
+# Plot the result
+plot(x = df_sindata$predicted_x,
+     y = df_sindata$sin_x,
+     col="red", type="l", cex=2, xlim = c(0, 10),
+     main = "Fig 3.4a: Neural Network trained to fit the arcsine function.",
+     xlab = "?",
+     ylab = "?")
+points(df_sindata %>% arrange(x), col="darkgreen", type = "l", lwd=1.5)
+#points(arrange(mydata_0_to_50, Var), type="l", col="blue", lwd=2)
 
-```{r, eval=F}
-# Random initialization of the weights in the interval [-1, 1]
-winit <- # Your code here
-nn <- neuralnet(# Your code here)
 
-# Plot of the training data (black), test data (blue), and predictions (red)
-
-plot(tr, cex=2)
-points(te, col = "blue", cex=1)
-points(te[,1],predict(nn,te), col="red", cex=1
+# Plot the result
+plot(x = df_sindata$sin_x,
+     y = df_sindata$predicted_x,
+     col="red", type="l", cex=2, xlim = c(-1, 1), ylim = c(0, 10),
+     main = "Fig 3.4b: ",
+     xlab = "?",
+     ylab = "?")
+points(x = df_sindata %>% arrange(x) %>% extract2(2), # sin_x
+       y = df_sindata %>% arrange(x) %>% extract2(1), # x
+       col="darkgreen", type = "l", lwd=1.5)
 ```
+
 
