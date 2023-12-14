@@ -14,6 +14,7 @@ output: pdf_document
 library(magrittr)
 library(neuralnet)
 library(dplyr)
+library(latex2exp)
 ```
 
 ## Assignment 3.1
@@ -217,4 +218,43 @@ points(x = df_sindata %>% arrange(x) %>% extract2(2), # sin_x
 
 ```
 
+
+
+
+
+```{r Figure 3.5, echo=F, out.width="70%", fig.align='center'}
+# Assignment 3.5
+
+# Create data
+set.seed(92834984)
+x_vals_2 <- runif(500, -pi/2, pi/2)
+df_sindata_2 <- data.frame(x=x_vals_2, sin_x = sin(x_vals_2))
+
+# Train a NN for the arcsin function
+nn_arcsin_2 <- neuralnet(data = df_sindata_2,
+                       formula = x ~ sin_x,
+                       hidden = c(10),
+                       threshold = 0.1)
+
+# Arrange the data so observations can be connected with lines in plot below
+df_sindata_2 <- df_sindata_2 %>%
+  mutate(predicted_x = predict(nn_arcsin_2, data.frame(df_sindata_2$sin_x))) %>%
+  arrange(predicted_x)
+
+# Adjust margins to avoid cropping y label below
+par(mar = c(5, 5, 4, 1))
+
+# Plot the resulting predictions and true arcsin function
+plot(x = df_sindata_2$sin_x,
+     y = df_sindata_2$predicted_x,
+     col="red", type="l", cex=2, xlim = c(-1, 1), ylim = c(-pi/2, pi/2),
+     lwd = 1.5,
+     main = "Fig 3.5: NN trained to learn the arcsin function",
+     xlab = "sin(x)",
+     ylab = TeX(r"($\hat{x} = \hat{arcsin}(sin(x))$)"))
+points(x = df_sindata_2 %>% arrange(x) %>% extract2(2), # sin_x
+       y = df_sindata_2 %>% arrange(x) %>% extract2(1), # x
+       col="darkgreen", type = "l", lwd=1.5)
+
+```
 
