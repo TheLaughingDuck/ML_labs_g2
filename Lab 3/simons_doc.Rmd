@@ -8,13 +8,16 @@ output: pdf_document
 
 # Assignment 3
 
-```{r Setup, echo=F, message=F, warning=F}
+```{r setup, echo=F, message=F, warning=F}
 # Setup
 
 library(magrittr)
 library(neuralnet)
 library(dplyr)
-library(latex2exp)
+library(latex2exp) # To include "prediction" hats in Figures 3.4 and 3.5
+
+library(knitr) # for caching in Assignment 3
+#opts_chunk$set(cache = T)
 ```
 
 ## Assignment 3.1
@@ -170,11 +173,13 @@ $$\lim_{x \to \infty} f(x) = \boldsymbol{W}^{(2)}_1 \cdot \delta_1 + \cdots + \b
 We calculate this limit for the trained Neural Network from Assignment 3.1 to be about `r round(limit,2)`, and include the limit as a gold line of triumph in Figure 3.3.
 
 ## Assignment 3.5
-Now we are interested in training a neural network to learn the arcsine function, which is the inverse of the sine function. To do this, we first generate $500$ observations in the interval $[0, 10]$ uniformly, and then apply the sine function to each observation. We then train a neural network with the same structure as previously, but with the observations as response variable, and the sine function applied to the observations as the explanatory variable. We use the sigmoid activation function. In Figure 3.4 we plot the training observations with a green line, and the predictions (on the training data) as a red line. Note that the \textit{predicted} $\hat{x}$ are indicated on the horizontal axis, and \textit{explanatory} $\sin(x)$ are indicated on the vertical axis, in order to facilitate easy comparison with previous figures.
+Now we are interested in training a neural network to learn the arcsine function, which is the inverse of the sine function. To do this, we first generate $500$ observations in the interval $[0, 10]$ uniformly, and then apply the sine function to each observation. We then train a neural network with the same structure as previously, but with the observations as response variable, and the sine function applied to the observations as the explanatory variable. We use the sigmoid activation function. In Figure 3.4 we plot the training observations with a green line, and the predictions (on the training data) as a red line.
 
 In Figure 3.4 we see clearly that the neural network is terrible at predicting the observations. This is not surprising, since the sine function is surjective, but not injective, and thus can not be uniquely inverted. Additionally, the range of the explanatory variable ($[-1, 1]$) is quite narrow, which makes it harder for the neural network to capture the behaviour in the response variable.
 
-```{r Figure 3.4, echo=F, out.width="70%", fig.align='center'}
+It should be noted that these issues reside mostly with the problem formulation however. By simulating x-values in the interval $[0, 10]$, rather than the true output region $[-\frac \pi 2, \frac \pi 2]$ of the arcsine function, the neural network is \textit{set up} to fail, rather than failing due to an inherent flaw in the model. In fact any conceivable model would fail just as spectacularly, likely generating similar results to those in Figure 3.4. If we instead reformulate the problem, and generate (as few as $50$) x-values uniformly in the interval $[-\frac \pi 2, \frac \pi 2]$, and then train a neural network on this data, we achieve a very good fit, shown in Figure 3.5.
+
+```{r Figure 3.4 Bad in-data, echo=F, out.height="70%", fig.align='center'}
 # Assignment 3.5
 
 # Create data
@@ -191,50 +196,35 @@ nn_arcsin <- neuralnet(data = df_sindata,
 # Arrange the data so observations can be connected with lines in plot below
 df_sindata <- df_sindata %>%
   mutate(predicted_x = predict(nn_arcsin, data.frame(df_sindata$sin_x))) %>%
-  arrange(predicted_x)
+  arrange(sin_x)
 
+# Adjust margins to avoid cropping y label below
+par(mar = c(5, 4, 4, 2)+0.5) # Bottom Left Top Right
 
-# Plot the result
-plot(x = df_sindata$predicted_x,
-     y = df_sindata$sin_x,
-     col="red", type="l", cex=2, xlim = c(0, 10),
-     main = "Fig 3.4a: Neural Network trained to fit the arcsine function.",
-     xlab = "?",
-     ylab = "?")
-points(df_sindata %>% arrange(x), col="darkgreen", type = "l", lwd=1.5)
-#points(arrange(mydata_0_to_50, Var), type="l", col="blue", lwd=2)
-
-
-# Plot the result
+# Plot the result (using inappropriate data)
 plot(x = df_sindata$sin_x,
      y = df_sindata$predicted_x,
-     col="red", type="l", cex=2, xlim = c(-1, 1), ylim = c(0, 10),
-     main = "Fig 3.4b: ",
-     xlab = "?",
-     ylab = "?")
+     col="red", type="lp", cex=1, xlim = c(-1, 1), ylim = c(0, 10),
+     main = paste("Fig 3.4: NN trained with x-values from [0, 10] (inappropriate)"),
+     xlab = "sin(x)",
+     ylab = TeX(r"($\hat{x} = \hat{arcsin}(sin(x))$)"))
 points(x = df_sindata %>% arrange(x) %>% extract2(2), # sin_x
        y = df_sindata %>% arrange(x) %>% extract2(1), # x
        col="darkgreen", type = "l", lwd=1.5)
-
 ```
 
-
-
-
-
-```{r Figure 3.5, echo=F, out.width="70%", fig.align='center'}
+```{r Figure 3.4 Good in-data, echo=F, out.height="70%", fig.align='center'}
 # Assignment 3.5
 
 # Create data
 set.seed(92834984)
-x_vals_2 <- runif(500, -pi/2, pi/2)
+x_vals_2 <- runif(50, -pi/2, pi/2)
 df_sindata_2 <- data.frame(x=x_vals_2, sin_x = sin(x_vals_2))
 
 # Train a NN for the arcsin function
 nn_arcsin_2 <- neuralnet(data = df_sindata_2,
                        formula = x ~ sin_x,
-                       hidden = c(10),
-                       threshold = 0.1)
+                       hidden = c(10))
 
 # Arrange the data so observations can be connected with lines in plot below
 df_sindata_2 <- df_sindata_2 %>%
@@ -242,19 +232,16 @@ df_sindata_2 <- df_sindata_2 %>%
   arrange(predicted_x)
 
 # Adjust margins to avoid cropping y label below
-par(mar = c(5, 5, 4, 1))
+par(mar = c(5, 4, 4, 2)+0.5) # Bottom Left Top Right
 
-# Plot the resulting predictions and true arcsin function
+# Plot the resulting predictions and true arcsin function (using good data)
 plot(x = df_sindata_2$sin_x,
      y = df_sindata_2$predicted_x,
-     col="red", type="l", cex=2, xlim = c(-1, 1), ylim = c(-pi/2, pi/2),
-     lwd = 1.5,
-     main = "Fig 3.5: NN trained to learn the arcsin function",
+     col="red", type="p", cex=1, xlim = c(-1, 1), ylim = c(-pi/2, pi/2),
+     main = expression("Fig 3.5: NN trained with x-values from [" ~ frac(-pi, 2) ~ ", " ~ frac(pi, 2) ~ "] (appropriate)"),
      xlab = "sin(x)",
      ylab = TeX(r"($\hat{x} = \hat{arcsin}(sin(x))$)"))
 points(x = df_sindata_2 %>% arrange(x) %>% extract2(2), # sin_x
        y = df_sindata_2 %>% arrange(x) %>% extract2(1), # x
        col="darkgreen", type = "l", lwd=1.5)
-
 ```
-
