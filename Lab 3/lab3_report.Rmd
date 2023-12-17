@@ -223,10 +223,10 @@ co<-coef(filter3)[[1]] # linear coefficients for the support vectors
 inte<- - b(filter3) # negative intercept of the linear combination
 k<-NULL
 for(i in 1:10){ # We produce predictions for just the first 10 points in the dataset.
-  cat("point:",i,"/10","\n")
+  # cat("point:",i,"/10","\n")
   k2<-NULL
   for(j in 1:length(sv)){
-    cat("support vector:",j,"/",length(sv),"\r")
+    # cat("support vector:",j,"/",length(sv),"\r")
     # a new point is classified according to the sign of a linear combination of the kernel function values between the support vectors and the new point.
     # "kernel used: "radial basis function kernel (also known as Gaussian) with a width of 0.05"
     k2 <- c(k2, co[j]*exp(-0.05*sum((spam[i,-58]-spam[sv[j],-58])^2)))
