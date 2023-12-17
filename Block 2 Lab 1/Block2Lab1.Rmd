@@ -2,16 +2,11 @@
 title: "Lab 1 Block 2 Report"
 author: "Marijn Jaarsma & Simon Jorstedt & Hugo Morvan"
 date: "`r Sys.Date()`"
-output:
-  pdf_document:
-    latex_engine: lualatex
-    pandoc_args: --listings
-    includes:
-      in_header: preamble.tex
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ```{r libraries, echo=FALSE, message=FALSE, warning=FALSE}
@@ -92,7 +87,7 @@ meR100 <- c()
 
 for(i in 1:1000){
   
-  cat("Iteration:", i, "\r")
+  #cat("Iteration:", i, "\r")
   #Creating the training data
   training <- get_training()
   trdata <- training[[1]]
@@ -149,7 +144,7 @@ meR10 <- c()
 meR100 <- c()
 
 for(i in 1:1000){
-  cat("Iteration:", i, "\r")
+  #cat("Iteration:", i, "\r")
   #Creating the training data
   training <- get_training()
   trdata <- training[[1]]
@@ -204,7 +199,7 @@ meR10 <- c()
 meR100 <- c()
 
 for(i in 1:1000){
-  cat("Iteration:", i, "\r")
+  #cat("Iteration:", i, "\r")
   #Creating the training data
   training <- get_training()
   trdata <- training[[1]]
