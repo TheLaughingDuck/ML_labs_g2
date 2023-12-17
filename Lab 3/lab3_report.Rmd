@@ -10,6 +10,14 @@ output:
       in_header: preamble.tex
 ---
 
+# Statement of Contribution
+
+-   Marijn wrote the code and analysis for question 1.
+
+-   Hugo wrote the code and analysis for question 2.
+
+-   Simon wrote the code and analysis for question 3.
+
 ```{r Libraries, echo=FALSE, warning=FALSE, message=FALSE}
 library(geosphere)
 library(magrittr)
@@ -24,6 +32,7 @@ library(knitr) # for caching in Assignment 3
 # 1. Kernel Methods
 
 ## Setup
+
 ```{r Q1_Setup}
 # Read in data and merge
 df_stations <- read.csv("stations.csv", fileEncoding="latin1")
@@ -46,6 +55,7 @@ times <- c("04:00:00", "06:00:00", "08:00:00", "10:00:00", "12:00:00", "14:00:00
 ```
 
 ## Kernel Computation (Sum of Three Gaussian Kernels)
+
 ```{r Q1_Code}
 # Remove rows with observations posterior to wanted time
 data_dates <- strptime(df_st[, "date"], "%Y-%m-%d", tz="UTC")
@@ -103,6 +113,7 @@ title(paste0("Summed Kernel Predictions\n", date))
 ```
 
 ## Kernel Computation (Product of Three Gaussian Kernels)
+
 ```{r Q1_Mult_Kernel}
 # Combined kernel product
 k_comb_prod <- k_dist * k_date * k_time
@@ -116,7 +127,8 @@ title(paste0("Product Kernel Predictions\n", date))
 ```
 
 ## Kernel Comparison
-The product kernel produces slightly higher values than the summed kernel. This is due to the division in the computation of the predictions. Multiplying the kernels gives smaller values than summing would, as the kernel values are all between 0 and 1 due to the fact that a Gaussian kernel function was used. However, when dividing by a smaller value this produces slightly higher values than the summed kernel produces. 
+
+The product kernel produces slightly higher values than the summed kernel. This is due to the division in the computation of the predictions. Multiplying the kernels gives smaller values than summing would, as the kernel values are all between 0 and 1 due to the fact that a Gaussian kernel function was used. However, when dividing by a smaller value this produces slightly higher values than the summed kernel produces.
 
 The model is not very flexible to different inputs; a different location or time of year gives almost the same result. Perhaps different weights should be attached to the different kernels. The hour kernel is always the same, and has equal weight to the other two kernels. Additionally, the distance kernel is only on a range between about 0.32 and 0.42 rather than 0 and 1 as the distance values in this kernel are so large. A big difference in distance may have a big impact on the predicted temperature, but this doesn't reflect from the kernel value. A linear combination between the kernels, where the weights may be tuned may be a better option.
 
@@ -201,18 +213,17 @@ err3
 
 ### Questions
 
-1. Which filter do we return to the user ? filter0, filter1, filter2 or filter3? Why?
+1.  Which filter do we return to the user ? filter0, filter1, filter2 or filter3? Why?
 
--> We return filter0 to the user because it is the only one using the validation dataset for prediction. All the other 3 filters are using the test dataset for prediction, which is not good because the test dataset is supposed to be used only for the final evaluation of the model. 
+-\> We return filter0 to the user because it is the only one using the validation dataset for prediction. All the other 3 filters are using the test dataset for prediction, which is not good because the test dataset is supposed to be used only for the final evaluation of the model.
 
-2. What is the estimate of the generalization error of the filter returned to the user? err0, err1, err2 or err3? Why?
+2.  What is the estimate of the generalization error of the filter returned to the user? err0, err1, err2 or err3? Why?
 
--> The estimate of the generalization error of the filter returned to the user is err1 because it is using the same training as filter0 but the prediction is made on the test dataset instead of the validation dataset.
+-\> The estimate of the generalization error of the filter returned to the user is err1 because it is using the same training as filter0 but the prediction is made on the test dataset instead of the validation dataset.
 
-## (3) 
-Once a SVM has been fitted to the training data, a new point is essentially classified according to the sign of a linear combination of the kernel function values between the support vectors and the new point.
-You are asked to implement this linear combination for `filter3` . You should make use of the functions `alphaindex` that return the indexes of the support vectors, `coef` that returns the linear coefficients for the support vectors, and `b` , that returns the negative intercept of the linear combination. See the help file of the kernlab package for more information. You can check if your results are correct by comparing them with the output of the function predict where you set type = "decision".
-Do so for the first 10 points in the spam dataset. Feel free to use the template provided in the Lab3Block1 2021 SVMs St.R file.
+## (3)
+
+Once a SVM has been fitted to the training data, a new point is essentially classified according to the sign of a linear combination of the kernel function values between the support vectors and the new point. You are asked to implement this linear combination for `filter3` . You should make use of the functions `alphaindex` that return the indexes of the support vectors, `coef` that returns the linear coefficients for the support vectors, and `b` , that returns the negative intercept of the linear combination. See the help file of the kernlab package for more information. You can check if your results are correct by comparing them with the output of the function predict where you set type = "decision". Do so for the first 10 points in the spam dataset. Feel free to use the template provided in the Lab3Block1 2021 SVMs St.R file.
 
 ```{r 2.3, echo=TRUE}
 
@@ -254,6 +265,7 @@ library(knitr) # for caching in Assignment 3
 ```
 
 ## Assignment 3.1
+
 In Figure 3.1 below, we see the result of a neural network applied to a set of $25$ datapoints uniformly spread over the interval $[0, 10]$, with the response being the sine function applied to the datapoints, with no added random error. These training points are colored green and made small. Red points are the pointwise predictions by the neural net. The blue curve represents the true sine curve.
 
 ```{r Train and visualise first NN, echo=F, out.width="70%", fig.align='center'}
@@ -284,6 +296,7 @@ points(tr$Var,
 ```
 
 ## Assignment 3.2
+
 The neural network in Assignment 3.1 used a standard sigmoid activation function. Now we are going to use a linear activation function (or the identity) $h_1(x) = x$, the ReLu $h_2(x) = \max(0, x)$, and the softplus $h_3(x) = \ln(1+e^x)$ each in their own neural network. However, as we tried this, we ran into an issue with the ReLu. It does not appear to be preprogrammed in the `neuralnet` function, and neither does `neuralnet` seem to be able to handle the undifferentiable point in ReLu. Instead we will be using a function we call the "Soft ReLu" $h_4(x) = \ln(1+e^x) \cdot \frac{e^x}{1+e^x}$, which is constructed by multiplying the softplus function with its derivative. That derivative happens also to be the sigmoid function. The result is a function that resembles the softplus, but takes a sharper turn around $x=0$, and thus approximates the ReLu better than the softplus.
 
 We train these three neural networks using the data from Assignment 3.1, and plot the resulting predictions in Figure 3.2. Again, green points are training observations, red points are predictions, and the blue curve is the true sine curve. The neural network with a linear "activation function" clearly performs terribly. This is because the linear "activation function", or rather the \textit{lack} of a non-linear activation function, reduces the neural network to a simple linear regression model. This explains why all the predictions by this neural network follow a straight line. For the neural networks with Soft ReLu and Softplus activation functions respectively, the predictions appear to be quite good, but possibly slightly worse than for the neural network with a sigmoid activation function.
@@ -353,6 +366,7 @@ mtext("Figure 3.2: Three activation functions", side=3, outer=TRUE, line=-1)
 ```
 
 ## Assignment 3.3
+
 Now we generate data similarly to before in the range $[0,50]$ and attempt to predict the value of the sine function applied to these values using the neural network that was trained in Assignment 3.1. Essentially we will use the neural network to predict the response of data from far outside the range of the training data. As a reminder, the range of this training data is $[0, 10]$. The result of this is plotted in Figure 3.3. Again the training data of the model is represented by green circles, and the predictions are represented by the red curve. The blue curve represents the entire new dataset (essentially the sine function graph). Clearly, the n eural network has a fatal flaw: It breaks away, producing terrible predictions immediately outside the range of the training data.
 
 ```{r Figure 3.3, echo=F, out.width="70%", fig.align='center'}
@@ -386,6 +400,7 @@ abline(b=0, a=limit, col="gold")
 ```
 
 ## Assignment 3.4
+
 In Assignment 3.3 we saw that the prediction curve of the Neural Network appeared to converge to some value. To find this limit, we formulate the function $f(x)$ of the Neural Network, first in compact notation, and then as a linear combination. Here, $\boldsymbol{W}^{(1)}$ is a 10 by 1 matrix carrying the weights of the first layer, $\boldsymbol{W}^{(2)}$ is a 1 by 10 matrix carrying the weights of the second (output) layer, $\boldsymbol{b}^{(1)}$ is a 10 by 1 vector carrying the biases for the first layer, and $b^{(2)}$ is a vector of length 1 (so a scalar in this case) carrying the second (output) layer bias term. The sigmoid activation function $\sigma(\cdot)$ is carried out element wise.
 
 $$f(x) = \boldsymbol{W}^{(2)} \sigma \Big( \boldsymbol{W}^{(1)}x + \boldsymbol{b}^{(1)} \Big) + b^{(2)} = \boldsymbol{W}^{(2)}_1 \sigma \Big( \boldsymbol{W}^{(1)}_1 x + \boldsymbol{b}^{(1)}_1 \Big) + \cdots + \boldsymbol{W}^{(2)}_{10} \sigma \Big( \boldsymbol{W}^{(1)}_{10} x + \boldsymbol{b}^{(1)}_{10} \Big) + b^{(2)}$$
@@ -406,6 +421,7 @@ $$\lim_{x \to \infty} f(x) = \boldsymbol{W}^{(2)}_1 \cdot \delta_1 + \cdots + \b
 We calculate this limit for the trained Neural Network from Assignment 3.1 to be about `r round(limit,2)`, and include the limit as a gold line of triumph in Figure 3.3.
 
 ## Assignment 3.5
+
 Now we are interested in training a neural network to learn the arcsine function, which is the inverse of the sine function. To do this, we first generate $500$ observations in the interval $[0, 10]$ uniformly, and then apply the sine function to each observation. We then train a neural network with the same structure as previously, but with the observations as response variable, and the sine function applied to the observations as the explanatory variable. We use the sigmoid activation function. In Figure 3.4 we plot the training observations with a green line, and the predictions (on the training data) as a red line.
 
 In Figure 3.4 we see clearly that the neural network is terrible at predicting the observations. This is not surprising, since the sine function is surjective, but not injective, and thus can not be uniquely inverted. Additionally, the range of the explanatory variable ($[-1, 1]$) is quite narrow, which makes it harder for the neural network to capture the behaviour in the response variable.
@@ -480,5 +496,6 @@ points(x = df_sindata_2 %>% arrange(x) %>% extract2(2), # sin_x
 ```
 
 # Appendix
+
 ```{r appendix, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
 ```
