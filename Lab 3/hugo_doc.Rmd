@@ -48,9 +48,6 @@ t <- table(mailtype,va[,58])
 err0 <- (t[1,2]+t[2,1])/sum(t)
 err0
 
-#***This filter cannot be used because it is using the validation dataset for prediction therefore the error reported cannot be compared with the other filters that use the test data for prediction.
-
-
 # The difference between filter0 and filter1 is that filter0 is using the validation dataset for the prediction while filter 1 uses the test dataset for the prediction. 
 
 # Filter1: data=tr, 
@@ -60,7 +57,7 @@ t <- table(mailtype,te[,58])
 err1 <- (t[1,2]+t[2,1])/sum(t)
 err1
 
-#The difference between filter1 and filter2 is that filter1 training dataset for training while fitler2 is using training and validation for training. Both are using the test dataset for prediction. If we were to use filter 1, we would completely disregard the validation dataset in the training of the filter, therefore **my opinion** is that filter2 is better because it is trained on bigger dataset (training+validation) thus it is more likely to be more accurate. This is confimed by the error rate of filter2 which is slightly lower than the error rate of filter1.
+#The difference between filter1 and filter2 is that filter1 training dataset for training while fitler2 is using training and validation for training.
 
 # Filter2: data=trva, not good?, training on the validation set and the training set
 filter2 <- ksvm(type~.,data=trva,kernel="rbfdot",kpar=list(sigma=0.05),C=which.min(err_va)*by,scaled=FALSE)
@@ -83,27 +80,13 @@ err3
 # Questions
 
 # 1. Which filter do we return to the user ? filter0, filter1, filter2 or filter3? Why?
-# -> We return filter2 for the reasons stated above.
+# -> We return filter0 to the user because it is the only one using the validation dataset for prediction. All the other 3 filters are using the test dataset for prediction, which is not good because the test dataset is supposed to be used only for the final evaluation of the model. 
 
 # 2. What is the estimate of the generalization error of the filter returned to the user? err0, err1, err2 or err3? Why?
-# -> err3 because it is trained on the whole dataset and therefore the error rate is the most likely to be close to the generalization error.
+# --> The estimate of the generalization error of the filter returned to the user is err1 because it is using the same training as filter0 but the prediction is made on the test dataset instead of the validation dataset.
+
 
 ```
-###################################################
-### code chunk number 4: ksvm
-###################################################
-## simple example using the promotergene data set
-data(promotergene)
-## create test and training set
-tindex <- sample(1:dim(promotergene)[1],5)
-genetrain <- promotergene[-tindex, ]
-genetest <- promotergene[tindex,]
-## train a support vector machine
-gene <- ksvm(Class~.,data=genetrain,kernel="rbfdot",kpar="automatic",C=60,cross=3,prob.model=TRUE)
-gene
-predict(gene, genetest)
-predict(gene, genetest, type="probabilities")
-###################################################*
 
 ## (3) 
 Once a SVM has been fitted to the training data, a new point is essentially classified according to the sign of a linear combination of the kernel function values between the support vectors and the new point.
