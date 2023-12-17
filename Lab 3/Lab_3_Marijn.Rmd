@@ -42,7 +42,7 @@ times <- c("04:00:00", "06:00:00", "08:00:00", "10:00:00", "12:00:00", "14:00:00
 # Remove rows with observations posterior to wanted time
 data_dates <- strptime(df_st[, "date"], "%Y-%m-%d", tz="UTC")
 wanted_date <- strptime(date, "%Y-%m-%d", tz="UTC")
-df_st_filt <- df_st[which(data_times < wanted_date),]
+df_st_filt <- df_st[which(data_dates < wanted_date),]
 
 # Distance kernel
 k_dist <- exp(-(distHaversine(df_st_filt[, c("longitude", "latitude")], c(a, b))^2) / (2 * h_distance^2))  
@@ -89,7 +89,7 @@ k_comb_sum <- sweep(k_time, 1, k_dist + k_date, FUN="+")
 # Non-parametric kernel regression
 temp_sum <- colSums(k_comb_sum * df_st_filt$air_temperature) / colSums(k_comb_sum)
 plot(temp_sum, type="o", xaxt="n", xlab="Time", ylab="Predicted Temperature")
-axis(1, at=1:length(temp), labels=times)
+axis(1, at=1:length(temp_sum), labels=times)
 title(paste0("Summed Kernel Predictions\n", date))
 
 ```
@@ -102,7 +102,7 @@ k_comb_prod <- k_dist * k_date * k_time
 # Non-parametric kernel regression
 temp_prod <- colSums(k_comb_prod * df_st_filt$air_temperature) / colSums(k_comb_prod)
 plot(temp_prod, type="o", xaxt="n", xlab="Time", ylab="Predicted Temperature")
-axis(1, at=1:length(temp), labels=times)
+axis(1, at=1:length(temp_prod), labels=times)
 title(paste0("Product Kernel Predictions\n", date))
 
 ```

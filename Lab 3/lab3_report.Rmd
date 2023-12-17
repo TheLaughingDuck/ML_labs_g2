@@ -2,10 +2,12 @@
 title: "Lab 3 Report"
 author: "Hugo Morvan & Marijn Jaarsma & Simon Jorstedt "
 date: "`r Sys.Date()`"
-output: pdf_document
-editor_options: 
-  markdown: 
-    wrap: 80
+output:
+  pdf_document:
+    latex_engine: lualatex
+    pandoc_args: --listings
+    includes:
+      in_header: preamble.tex
 ---
 
 ```{r Libraries, echo=FALSE, warning=FALSE, message=FALSE}
@@ -18,6 +20,7 @@ library(latex2exp) # To include "prediction" hats in Figures 3.4 and 3.5
 library(knitr) # for caching in Assignment 3
 #opts_chunk$set(cache = T)
 ```
+
 # 1. Kernel Methods
 
 ## Setup
@@ -94,7 +97,7 @@ k_comb_sum <- sweep(k_time, 1, k_dist + k_date, FUN="+")
 # Non-parametric kernel regression
 temp_sum <- colSums(k_comb_sum * df_st_filt$air_temperature) / colSums(k_comb_sum)
 plot(temp_sum, type="o", xaxt="n", xlab="Time", ylab="Predicted Temperature")
-axis(1, at=1:length(temp), labels=times)
+axis(1, at=1:length(temp_sum), labels=times)
 title(paste0("Summed Kernel Predictions\n", date))
 
 ```
@@ -107,7 +110,7 @@ k_comb_prod <- k_dist * k_date * k_time
 # Non-parametric kernel regression
 temp_prod <- colSums(k_comb_prod * df_st_filt$air_temperature) / colSums(k_comb_prod)
 plot(temp_prod, type="o", xaxt="n", xlab="Time", ylab="Predicted Temperature")
-axis(1, at=1:length(temp), labels=times)
+axis(1, at=1:length(temp_prod), labels=times)
 title(paste0("Product Kernel Predictions\n", date))
 
 ```
